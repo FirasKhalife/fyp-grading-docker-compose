@@ -1,0 +1,79 @@
+version: '3.7'
+name: fyp-grading
+
+services:
+  frontend:
+    build:
+      context: ../frontend
+    container_name: frontend
+    image: frontend
+    ports:
+      - '80:80'
+    networks:
+      - fyp-grading
+
+  admin-service:
+    build:
+      context: ../backend/admin-service
+    container_name: admin-service
+    image: admin-service
+    ports:
+      - '8080:8081'
+    networks:
+      - fyp-grading
+
+  review-service:
+    build:
+      context: ../backend/review-service
+    container_name: review-service
+    image: review-service
+    ports:
+      - '8080:8082'
+    networks:
+      - fyp-grading
+
+  rabbitmq:
+    build:
+      context: rabbitmq
+    container_name: rabbitmq
+    image: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    networks:
+      - fyp-grading
+
+  postgres:
+    build:
+      context: postgres
+    ports:
+      - '5432:5432'
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_DB: fyp-grading
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    networks:
+        - fyp-grading
+
+  mongodb:
+    build:
+      context: mongodb
+    ports:
+      - '27017:27017'
+    image: mongodb
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: fyp-grading
+    networks:
+        - fyp-grading
+
+networks:
+  fyp-grading:
+    driver: bridge
