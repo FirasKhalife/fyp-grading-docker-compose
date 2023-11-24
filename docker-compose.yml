@@ -22,55 +22,73 @@ services:
     networks:
       - fyp-grading
 
-  review-service:
+  evaluation-service:
     build:
-      context: ../backend/review-service
-    container_name: review-service
-    image: review-service
+      context: ../backend/evaluation-service
+    container_name: evaluation-service
+    image: evaluation-service
     ports:
       - '8080:8082'
     networks:
       - fyp-grading
 
   rabbitmq:
-    build:
-      context: rabbitmq
+    image: rabbitmq:3-management
     container_name: rabbitmq
-    image: rabbitmq
     ports:
       - '5672:5672'
       - '15672:15672'
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
     networks:
       - fyp-grading
 
-  postgres:
-    build:
-      context: postgres
+  postgres-admin:
+    image: postgres:latest
+    container_name: postgres-admin
     ports:
       - '5432:5432'
-    image: postgres
-    container_name: postgres
     environment:
-      POSTGRES_DB: fyp-grading
+      POSTGRES_DB: admin-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
     networks:
         - fyp-grading
 
+  postgres-rubric:
+    image: postgres:latest
+    container_name: postgres-rubric
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: rubric-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    networks:
+      - fyp-grading
+
+  postgres-notification:
+    image: postgres:latest
+    container_name: postgres-notification
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_DB: notification-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    networks:
+      - fyp-grading
+
   mongodb:
-    build:
-      context: mongodb
+    image: mongodb:latest
+    container_name: mongodb
     ports:
       - '27017:27017'
-    image: mongodb
-    container_name: mongodb
     environment:
+      MONGO_INITDB_DATABASE: evaluation-db
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
-      MONGO_INITDB_DATABASE: fyp-grading
     networks:
         - fyp-grading
 
