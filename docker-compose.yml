@@ -4,7 +4,7 @@ name: fyp-grading
 services:
   frontend:
     build:
-      context: ../frontend
+      context: ../frontend/fyp-grading-frontend
     container_name: frontend
     image: frontend
     ports:
@@ -12,25 +12,24 @@ services:
     networks:
       - fyp-grading
 
-  admin-service:
+  eureka-registry:
     build:
-      context: ../backend/admin-service
-    container_name: admin-service
-    image: admin-service
+      context: ../cloud/EurekaService
+    image: eureka-service
     ports:
-      - '8080:8081'
+      - '8761:8761'
     networks:
       - fyp-grading
 
-  evaluation-service:
-    build:
-      context: ../backend/evaluation-service
-    container_name: evaluation-service
-    image: evaluation-service
+  redis:
+    image: redis
+    container_name: redis
     ports:
-      - '8080:8082'
+      - '6379:6379'
     networks:
       - fyp-grading
+    environment:
+      - spring.data.redis.host=redis
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -54,7 +53,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
     networks:
-        - fyp-grading
+      - fyp-grading
 
   postgres-rubric:
     image: postgres:latest
@@ -90,7 +89,96 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
     networks:
-        - fyp-grading
+      - fyp-grading
+
+  api-gateway:
+    build:
+      context: ../cloud/api-gateway
+    image: api-gateway
+    ports:
+      - '9191:9191'
+    environment:
+      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - spring.data.redis.host=redis
+    networks:
+      - fyp-grading
+    deploy:
+      replicas: 1
+    depends_on:
+      - redis
+      - eureka-registry
+
+  admin-service:
+    build:
+      context: ../backend/fyp-grading-admin-service
+    image: admin-service
+    networks:
+      - fyp-grading
+    deploy:
+      replicas: 2
+    environment:
+      - spring.datasource.url= jdbc:postgresql://postgres-admin:5432/admin-db
+      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - spring.rabbitmq.host=rabbitmq
+      - spring.data.redis.host=redis
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres-admin
+      - eureka-registry
+
+  evaluation-service:
+    build:
+      context: ../backend/fyp-grading-evaluation-service
+    image: evaluation-service
+    networks:
+      - fyp-grading
+    deploy:
+      replicas: 2
+    environment:
+      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - spring.data.redis.host=redis
+      - spring.data.mongodb.uri=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
+    depends_on:
+      - mongodb
+      - redis
+      - eureka-registry
+
+  notification-service:
+    build:
+      context: ../backend/fyp-grading-notification-service
+    image: notification-service
+    networks:
+      - fyp-grading
+    deploy:
+      replicas: 1
+    environment:
+      - spring.datasource.url= jdbc:postgresql://postgres-notification:5432/notification-db
+      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - spring.rabbitmq.host=rabbitmq
+      - spring.data.redis.host=redis
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres-notification
+      - eureka-registry
+
+  rubric-service:
+    build:
+      context: ../backend/fyp-grading-rubric-service
+    image: rubric-service
+    networks:
+      - fyp-grading
+    deploy:
+        replicas: 1
+    environment:
+        - spring.datasource.url= jdbc:postgresql://postgres-rubric:5432/rubric-db
+        - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+        - spring.data.redis.host=redis
+    depends_on:
+        - postgres-rubric
+        - redis
+        - eureka-registry
 
 networks:
   fyp-grading:
