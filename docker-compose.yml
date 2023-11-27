@@ -12,10 +12,11 @@ services:
     networks:
       - fyp-grading
 
-  eureka-registry:
+  registry-service:
     build:
-      context: ../cloud/EurekaService
-    image: eureka-service
+      context: ../cloud/fyp-grading-registry-service
+    image: registry-service
+    container_name: registry-service
     ports:
       - '8761:8761'
     networks:
@@ -32,7 +33,7 @@ services:
       - spring.data.redis.host=redis
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:latest
     container_name: rabbitmq
     ports:
       - '5672:5672'
@@ -93,12 +94,13 @@ services:
 
   api-gateway:
     build:
-      context: ../cloud/api-gateway
+      context: ../cloud/fyp-grading-api-gateway
     image: api-gateway
+    container_name: api-gateway
     ports:
       - '9191:9191'
     environment:
-      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - eureka.client.serviceUrl.defaultZone=http://registry-registry:8761/eureka/
       - spring.data.redis.host=redis
     networks:
       - fyp-grading
@@ -106,7 +108,7 @@ services:
       replicas: 1
     depends_on:
       - redis
-      - eureka-registry
+      - registry-service
 
   admin-service:
     build:
@@ -118,14 +120,14 @@ services:
       replicas: 2
     environment:
       - spring.datasource.url= jdbc:postgresql://postgres-admin:5432/admin-db
-      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
       - spring.rabbitmq.host=rabbitmq
       - spring.data.redis.host=redis
     depends_on:
       - rabbitmq
       - redis
       - postgres-admin
-      - eureka-registry
+      - registry-service
 
   evaluation-service:
     build:
@@ -136,13 +138,13 @@ services:
     deploy:
       replicas: 2
     environment:
-      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
       - spring.data.redis.host=redis
       - spring.data.mongodb.uri=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
     depends_on:
       - mongodb
       - redis
-      - eureka-registry
+      - registry-service
 
   notification-service:
     build:
@@ -154,14 +156,14 @@ services:
       replicas: 1
     environment:
       - spring.datasource.url= jdbc:postgresql://postgres-notification:5432/notification-db
-      - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+      - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
       - spring.rabbitmq.host=rabbitmq
       - spring.data.redis.host=redis
     depends_on:
       - rabbitmq
       - redis
       - postgres-notification
-      - eureka-registry
+      - registry-service
 
   rubric-service:
     build:
@@ -173,12 +175,12 @@ services:
         replicas: 1
     environment:
         - spring.datasource.url= jdbc:postgresql://postgres-rubric:5432/rubric-db
-        - eureka.client.serviceUrl.defaultZone=http://eureka-registry:8761/eureka/
+        - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
         - spring.data.redis.host=redis
     depends_on:
         - postgres-rubric
         - redis
-        - eureka-registry
+        - registry-service
 
 networks:
   fyp-grading:
