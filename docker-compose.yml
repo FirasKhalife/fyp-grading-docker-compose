@@ -39,8 +39,21 @@ services:
     networks:
       - fyp-grading
 
+  config-server:
+    build:
+      context: ../fyp-grading-config-server
+    image: config-server:1.0
+    container_name: config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=git,prod
+      - GIT_REPO_URI=https://github.com/FirasKhalife/fyp-grading-config.git
+      - GIT_BRANCH=cloud-course
+      - PORT=8071
+    networks:
+      - fyp-grading
+
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:4.0-rc-management
     container_name: rabbitmq
     ports:
       - '5672:5672'
@@ -54,8 +67,8 @@ services:
   frontend:
     build:
       context: ../fyp-grading-frontend
-    container_name: frontend
     image: frontend
+    container_name: frontend
     ports:
       - '80:80'
     networks:
@@ -65,12 +78,14 @@ services:
     build:
       context: ../fyp-grading-admin-service
     image: admin-service:1.0
+    container_name: admin-service
 #    deploy:
 #      replicas: 2
     environment:
       - DATABASE_URL=jdbc:postgresql://admin-db:5432/admin-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - CONFIG_SERVER_URL=http://config-server:8071/
       - REGISTRY_SERVICE_URL=http://registry-service:8761/eureka/
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -112,12 +127,14 @@ services:
     build:
       context: ../fyp-grading-evaluation-service
     image: evaluation-service:1.0
+    container_name: evaluation-service
     networks:
       - fyp-grading
 #    deploy:
 #      replicas: 2
     environment:
       - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
+      - CONFIG_SERVER_URL=http://config-server:8071/
       - REGISTRY_SERVICE_URL=http://registry-service:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - PORT=8080
@@ -151,6 +168,7 @@ services:
     build:
       context: ../fyp-grading-notification-service
     image: notification-service:1.0
+    container_name: notification-service
     networks:
       - fyp-grading
 #    deploy:
@@ -159,6 +177,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://notification-db:5432/notification-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - CONFIG_SERVER_URL=http://config-server:8071/
       - REGISTRY_SERVICE_URL=http://registry-service:8761/eureka/
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -195,6 +214,7 @@ services:
     build:
       context: ../fyp-grading-rubric-service
     image: rubric-service:1.0
+    container_name: rubric-service
     networks:
       - fyp-grading
 #    deploy:
@@ -203,6 +223,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://rubric-db:5432/rubric-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - CONFIG_SERVER_URL=http://config-server:8071/
       - REGISTRY_SERVICE_URL=http://registry-service:8761/eureka/
       - SPRING_PROFILES_ACTIVE=prod
       - PORT=8080
