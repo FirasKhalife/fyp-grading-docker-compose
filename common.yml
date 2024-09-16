@@ -1,0 +1,23 @@
+services:
+  network-service:
+    networks:
+      - ${GLOBAL_NETWORK}
+
+  base-service:
+    extends:
+      service: network-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
+      - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m

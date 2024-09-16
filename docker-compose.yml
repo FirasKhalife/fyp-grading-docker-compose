@@ -12,22 +12,24 @@ services:
     environment:
       - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
       - spring.data.redis.host=redis
-    networks:
-      - fyp-grading
-    deploy:
-      replicas: 1
+#    deploy:
+#      replicas: 1
     depends_on:
       - redis
+    extends:
+      file: common.yml
+      service: network-service
 
   redis:
     image: redis
     container_name: redis
     ports:
       - '6379:6379'
-    networks:
-      - fyp-grading
     environment:
       - spring.data.redis.host=redis
+    extends:
+      file: common.yml
+      service: network-service
 
   registry-service:
     build:
@@ -38,8 +40,9 @@ services:
       - '8761:8761'
     expose:
       - 8761
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   config-server:
     build:
@@ -50,10 +53,6 @@ services:
       - SPRING_PROFILES_ACTIVE=git,prod
       - GIT_REPO_URI=https://github.com/FirasKhalife/fyp-grading-config.git
       - GIT_BRANCH=cloud-course
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - PORT=8071
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"]
@@ -63,8 +62,9 @@ services:
       start_period: 10s
     expose:
       - 8071
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   rabbitmq:
     image: rabbitmq:4.0-rc-management
@@ -84,8 +84,9 @@ services:
     expose:
       - 5672
       - 15672
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
   frontend:
     build:
@@ -96,8 +97,9 @@ services:
       - '80:80'
     expose:
       - 80
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
   admin-service:
     build:
@@ -112,11 +114,6 @@ services:
       - DATABASE_PASSWORD=admin
       - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
       - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - PORT=8080
 #      - spring.data.redis.host=redis
     depends_on:
@@ -126,8 +123,6 @@ services:
       admin-db:
         condition: service_healthy
 #      - redis
-      rabbitmq:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1" ]
       interval: 10s
@@ -136,8 +131,9 @@ services:
       start_period: 10s
     expose:
       - 8080
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   admin-db:
     image: postgres:latest
@@ -156,8 +152,9 @@ services:
       start_period: 5s
     expose:
       - 5432
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
   evaluation-service:
     build:
@@ -170,11 +167,6 @@ services:
       - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
       - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
       - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - PORT=8080
 #      - spring.data.redis.host=redis
     depends_on:
@@ -184,8 +176,6 @@ services:
       mongodb:
         condition: service_healthy
 #      - redis
-      rabbitmq:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1" ]
       interval: 10s
@@ -194,8 +184,9 @@ services:
       start_period: 10s
     expose:
       - 8080
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   mongodb:
     image: mongo:latest
@@ -214,8 +205,9 @@ services:
       start_period: 5s
     expose:
       - 27017
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
   notification-service:
     build:
@@ -230,11 +222,6 @@ services:
       - DATABASE_PASSWORD=admin
       - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
       - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - PORT=8080
 #      - spring.data.redis.host=redis
     depends_on:
@@ -244,8 +231,6 @@ services:
       notification-db:
         condition: service_healthy
 #      - redis
-      rabbitmq:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1" ]
       interval: 10s
@@ -254,8 +239,9 @@ services:
       start_period: 10s
     expose:
       - 8080
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   notification-db:
     image: postgres:latest
@@ -274,8 +260,9 @@ services:
       start_period: 5s
     expose:
       - 5434
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
   rubric-service:
     build:
@@ -288,13 +275,6 @@ services:
       - DATABASE_URL=jdbc:postgresql://rubric-db:5432/rubric-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
-      - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
-      - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - PORT=8080
     depends_on:
       config-server:
@@ -303,8 +283,6 @@ services:
       rubric-db:
         condition: service_healthy
 #      - redis
-      rabbitmq:
-        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1" ]
       interval: 10s
@@ -313,8 +291,9 @@ services:
       start_period: 10s
     expose:
       - 8080
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: base-service
 
   rubric-db:
     image: postgres:latest
@@ -333,8 +312,9 @@ services:
       start_period: 5s
     expose:
       - 5433
-    networks:
-      - fyp-grading
+    extends:
+      file: common.yml
+      service: network-service
 
 networks:
   fyp-grading:
