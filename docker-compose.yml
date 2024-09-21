@@ -5,20 +5,32 @@ services:
   api-gateway:
     build:
       context: ../fyp-grading-api-gateway
-    image: api-gateway
-    container_name: api-gateway
+    image: ${API_GATEWAY_NAME}:1.0
+    container_name: ${API_GATEWAY_NAME}
+    environment:
+      - SPRING_APPLICATION_NAME=${API_GATEWAY_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=9191
+#      - spring.data.redis.host=redis
     ports:
       - '9191:9191'
-    environment:
-      - eureka.client.serviceUrl.defaultZone=http://registry-service:8761/eureka/
-      - spring.data.redis.host=redis
-#    deploy:
-#      replicas: 1
+    expose:
+      - 9191
     depends_on:
-      - redis
+      admin-service:
+        condition: service_healthy
+      evaluation-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      rubric-service:
+        condition: service_healthy
+#      - redis
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: network-service
+      service: spring-service
 
   redis:
     image: redis
@@ -31,59 +43,70 @@ services:
       file: common.yml
       service: network-service
 
-  registry-service:
+  registry-server:
     build:
-      context: ../fyp-grading-registry-service
-    image: registry-service:1.0
-    container_name: registry-service
+      context: ../fyp-grading-registry-server
+    image: ${REGISTRY_SERVER_NAME}:1.0
+    container_name: ${REGISTRY_SERVER_NAME}
+    environment:
+      - SPRING_APPLICATION_NAME=${REGISTRY_SERVER_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=8761
     ports:
       - '8761:8761'
     expose:
       - 8761
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   config-server:
     build:
       context: ../fyp-grading-config-server
-    image: config-server:1.0
-    container_name: config-server
+    image: ${CONFIG_SERVER_NAME}:1.0
+    container_name: ${CONFIG_SERVER_NAME}
     environment:
-      - SPRING_PROFILES_ACTIVE=git,prod
       - GIT_REPO_URI=https://github.com/FirasKhalife/fyp-grading-config.git
       - GIT_BRANCH=cloud-course
+      - SPRING_PROFILES_ACTIVE=git,prod
+      - SPRING_APPLICATION_NAME=${CONFIG_SERVER_NAME}
+      - BUILD_VERSION=1.0
       - PORT=8071
-    healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+    ports:
+      - '8071:8071'
     expose:
       - 8071
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      registry-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1"]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   rabbitmq:
     image: rabbitmq:4.0-rc-management
     container_name: rabbitmq
-    ports:
-      - '5672:5672'
-      - '15672:15672'
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    expose:
+      - 5672
+      - 15672
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 5s
-    expose:
-      - 5672
-      - 15672
     extends:
       file: common.yml
       service: network-service
@@ -91,8 +114,8 @@ services:
   frontend:
     build:
       context: ../fyp-grading-frontend
-    image: frontend
-    container_name: frontend
+    image: ${FRONTEND_SERVICE_NAME}:1.0
+    container_name: ${FRONTEND_SERVICE_NAME}
     ports:
       - '80:80'
     expose:
@@ -104,36 +127,33 @@ services:
   admin-service:
     build:
       context: ../fyp-grading-admin-service
-    image: admin-service:1.0
-    container_name: admin-service
+    image: ${ADMIN_SERVICE_NAME}:1.0
+    container_name: ${ADMIN_SERVICE_NAME}
 #    deploy:
 #      replicas: 2
     environment:
       - DATABASE_URL=jdbc:postgresql://admin-db:5432/admin-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
-      - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
-      - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
+      - EVALUATION_SERVICE_NAME=${EVALUATION_SERVICE_NAME}
+      - NOTIFICATION_SERVICE_NAME=${NOTIFICATION_SERVICE_NAME}
+      - SPRING_APPLICATION_NAME=${ADMIN_SERVICE_NAME}
+      - BUILD_VERSION=1.0
       - PORT=8080
 #      - spring.data.redis.host=redis
+    expose:
+      - 8080
     depends_on:
       config-server:
         condition: service_healthy
-#      - registry-service
       admin-db:
         condition: service_healthy
 #      - redis
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    expose:
-      - 8080
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   admin-db:
     image: postgres:latest
@@ -144,49 +164,38 @@ services:
       POSTGRES_DB: admin-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d admin-db -U admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    expose:
-      - 5432
     extends:
       file: common.yml
-      service: network-service
+      service: postgres-service
 
   evaluation-service:
     build:
       context: ../fyp-grading-evaluation-service
-    image: evaluation-service:1.0
-    container_name: evaluation-service
+    image: ${EVALUATION_SERVICE_NAME}:1.0
+    container_name: ${EVALUATION_SERVICE_NAME}
 #    deploy:
 #      replicas: 2
     environment:
       - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
-      - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
-      - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
+      - ADMIN_SERVICE_NAME=${ADMIN_SERVICE_NAME}
+      - RUBRIC_SERVICE_NAME=${RUBRIC_SERVICE_NAME}
+      - SPRING_APPLICATION_NAME=${EVALUATION_SERVICE_NAME}
+      - BUILD_VERSION=1.0
       - PORT=8080
 #      - spring.data.redis.host=redis
+    expose:
+      - 8080
     depends_on:
       config-server:
         condition: service_healthy
-#      - registry-service
       mongodb:
         condition: service_healthy
 #      - redis
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    expose:
-      - 8080
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   mongodb:
     image: mongo:latest
@@ -212,36 +221,31 @@ services:
   notification-service:
     build:
       context: ../fyp-grading-notification-service
-    image: notification-service:1.0
-    container_name: notification-service
+    image: ${NOTIFICATION_SERVICE_NAME}:1.0
+    container_name: ${NOTIFICATION_SERVICE_NAME}
 #    deploy:
 #      replicas: 1
     environment:
       - DATABASE_URL=jdbc:postgresql://notification-db:5432/notification-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
-      - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}
-      - REGISTRY_SERVICE_URL=${REGISTRY_SERVICE_URL}
+      - SPRING_APPLICATION_NAME=${NOTIFICATION_SERVICE_NAME}
+      - BUILD_VERSION=1.0
       - PORT=8080
 #      - spring.data.redis.host=redis
+    expose:
+      - 8080
     depends_on:
       config-server:
         condition: service_healthy
-#      - registry-service
       notification-db:
         condition: service_healthy
 #      - redis
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    expose:
-      - 8080
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   notification-db:
     image: postgres:latest
@@ -252,48 +256,37 @@ services:
       POSTGRES_DB: notification-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d admin-db -U admin" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    expose:
-      - 5434
     extends:
       file: common.yml
-      service: network-service
+      service: postgres-service
 
   rubric-service:
     build:
       context: ../fyp-grading-rubric-service
-    image: rubric-service:1.0
-    container_name: rubric-service
+    image: ${RUBRIC_SERVICE_NAME}:1.0
+    container_name: ${RUBRIC_SERVICE_NAME}
 #    deploy:
 #        replicas: 1
     environment:
       - DATABASE_URL=jdbc:postgresql://rubric-db:5432/rubric-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - SPRING_APPLICATION_NAME=${RUBRIC_SERVICE_NAME}
+      - BUILD_VERSION=1.0
       - PORT=8080
+    expose:
+      - 8080
     depends_on:
       config-server:
         condition: service_healthy
-#      - registry-service
       rubric-db:
         condition: service_healthy
 #      - redis
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-    expose:
-      - 8080
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:${PORT}/actuator/health/readiness | grep UP || exit 1" ]
     extends:
       file: common.yml
-      service: base-service
+      service: spring-service
 
   rubric-db:
     image: postgres:latest
@@ -304,17 +297,9 @@ services:
       POSTGRES_DB: rubric-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d admin-db -U admin" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-    expose:
-      - 5433
     extends:
       file: common.yml
-      service: network-service
+      service: postgres-service
 
 networks:
   fyp-grading:
