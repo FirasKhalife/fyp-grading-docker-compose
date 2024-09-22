@@ -1,6 +1,7 @@
 version: '3.7'
 name: fyp-grading
 
+# TODO: ADD VOLUMES
 services:
   redis:
     image: redis:latest
@@ -23,4 +24,4 @@ services:
 
 networks:
   fyp-grading:
-    external: true
+    name: ${GLOBAL_NETWORK}

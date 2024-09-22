@@ -1,7 +1,6 @@
 #!/bin/bash
 
 docker-compose \
-  -f docker-compose/docker-compose.yml \
   -f docker-compose/docker-compose.spring-boot.yml \
   -f docker-compose/docker-compose.spring-cloud.yml \
   -f docker-compose/docker-compose.messaging.yml \

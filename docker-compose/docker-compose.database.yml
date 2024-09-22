@@ -1,6 +1,7 @@
 version: '3.7'
 name: fyp-grading
 
+# TODO: ADD VOLUMES
 services:
   admin-db:
     image: postgres:latest
@@ -64,4 +65,4 @@ services:
 
 networks:
   fyp-grading:
-    external: true
+    name: ${GLOBAL_NETWORK}
