@@ -1,5 +1,5 @@
 version: '3.7'
-name: fyp-grading
+name: ${PROJECT_NAME}
 
 # TODO: ADD VOLUMES
 services:
@@ -24,4 +24,4 @@ services:
 
 networks:
   fyp-grading:
-    name: ${GLOBAL_NETWORK}
+    name: ${GLOBAL_NETWORK_NAME}

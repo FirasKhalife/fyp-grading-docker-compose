@@ -1,11 +1,18 @@
 #!/bin/bash
 
-docker-compose \
-  -f docker-compose/docker-compose.spring-boot.yml \
-  -f docker-compose/docker-compose.spring-cloud.yml \
-  -f docker-compose/docker-compose.messaging.yml \
-  -f docker-compose/docker-compose.database.yml \
-  -f docker-compose/docker-compose.redis.yml \
-  -f docker-compose/docker-compose.grafana.yml \
-  -f docker-compose/docker-compose.frontend.yml \
-  up
+docker_compose_command="docker-compose"
+
+# Append all docker-compose YAML files
+for file in docker-compose/docker-compose.*.yml; do
+  docker_compose_command="$docker_compose_command -f $file"
+done
+
+# Detached mode
+docker_compose_command="$docker_compose_command"
+
+# Append all service names passed as arguments
+if [ "$#" -gt 0 ]; then
+  docker_compose_command="$docker_compose_command $*"
+fi
+
+$docker_compose_command

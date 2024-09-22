@@ -1,5 +1,5 @@
 version: '3.7'
-name: fyp-grading
+name: ${PROJECT_NAME}
 
 services:
   frontend:
@@ -17,4 +17,4 @@ services:
 
 networks:
   fyp-grading:
-    name: ${GLOBAL_NETWORK}
+    name: ${GLOBAL_NETWORK_NAME}

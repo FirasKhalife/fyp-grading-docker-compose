@@ -1,7 +1,7 @@
 services:
   network-service:
     networks:
-      - ${GLOBAL_NETWORK}
+      - ${GLOBAL_NETWORK_NAME}
 
   spring-service:
     extends:
