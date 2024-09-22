@@ -1,0 +1,109 @@
+version: '3.7'
+name: fyp-grading
+
+services:
+  admin-service:
+    build:
+      context: ../../fyp-grading-admin-service
+    image: ${ADMIN_SERVICE_NAME}:1.0
+    container_name: ${ADMIN_SERVICE_NAME}
+    environment:
+      - DATABASE_URL=jdbc:postgresql://admin-db:5432/admin-db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - EVALUATION_SERVICE_NAME=${EVALUATION_SERVICE_NAME}
+      - NOTIFICATION_SERVICE_NAME=${NOTIFICATION_SERVICE_NAME}
+      - SPRING_APPLICATION_NAME=${ADMIN_SERVICE_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=8080
+    expose:
+      - 8080
+    depends_on:
+      config-server:
+        condition: service_healthy
+      admin-db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
+    extends:
+      file: common.yml
+      service: spring-service
+
+  evaluation-service:
+    build:
+      context: ../../fyp-grading-evaluation-service
+    image: ${EVALUATION_SERVICE_NAME}:1.0
+    container_name: ${EVALUATION_SERVICE_NAME}
+    environment:
+      - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
+      - ADMIN_SERVICE_NAME=${ADMIN_SERVICE_NAME}
+      - RUBRIC_SERVICE_NAME=${RUBRIC_SERVICE_NAME}
+      - SPRING_APPLICATION_NAME=${EVALUATION_SERVICE_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=8080
+    expose:
+      - 8080
+    depends_on:
+      config-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
+    extends:
+      file: common.yml
+      service: spring-service
+
+  notification-service:
+    build:
+      context: ../../fyp-grading-notification-service
+    image: ${NOTIFICATION_SERVICE_NAME}:1.0
+    container_name: ${NOTIFICATION_SERVICE_NAME}
+    environment:
+      - DATABASE_URL=jdbc:postgresql://notification-db:5432/notification-db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - SPRING_APPLICATION_NAME=${NOTIFICATION_SERVICE_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=8080
+    expose:
+      - 8080
+    depends_on:
+      config-server:
+        condition: service_healthy
+      notification-db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
+    extends:
+      file: common.yml
+      service: spring-service
+
+  rubric-service:
+    build:
+      context: ../../fyp-grading-rubric-service
+    image: ${RUBRIC_SERVICE_NAME}:1.0
+    container_name: ${RUBRIC_SERVICE_NAME}
+    environment:
+      - DATABASE_URL=jdbc:postgresql://rubric-db:5432/rubric-db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - SPRING_APPLICATION_NAME=${RUBRIC_SERVICE_NAME}
+      - BUILD_VERSION=1.0
+      - PORT=8080
+    expose:
+      - 8080
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rubric-db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1" ]
+    extends:
+      file: common.yml
+      service: spring-service
+
+networks:
+  fyp-grading:
+    driver: bridge

@@ -1,0 +1,6 @@
+version: '3.7'
+name: fyp-grading
+
+networks:
+  fyp-grading:
+    external: true

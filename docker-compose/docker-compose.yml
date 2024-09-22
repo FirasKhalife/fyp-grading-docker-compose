@@ -1,0 +1,8 @@
+version: '3.7'
+name: fyp-grading
+
+# TODO: ADD VOLUMES TO APPROPRIATE SERVICES
+
+networks:
+  fyp-grading:
+    driver: bridge

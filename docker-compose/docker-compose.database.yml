@@ -1,0 +1,67 @@
+version: '3.7'
+name: fyp-grading
+
+services:
+  admin-db:
+    image: postgres:latest
+    container_name: admin-db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: admin-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    extends:
+      file: common.yml
+      service: postgres-service
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: evaluation-db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --eval 'db.adminCommand(\"ping\")'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    expose:
+      - 27017
+    extends:
+      file: common.yml
+      service: network-service
+
+  notification-db:
+    image: postgres:latest
+    container_name: notification-db
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_DB: notification-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    extends:
+      file: common.yml
+      service: postgres-service
+
+  rubric-db:
+    image: postgres:latest
+    container_name: rubric-db
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: rubric-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    extends:
+      file: common.yml
+      service: postgres-service
+
+networks:
+  fyp-grading:
+    external: true
