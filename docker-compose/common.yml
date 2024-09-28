@@ -14,7 +14,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
     healthcheck:
-      test: [] # to override
+      test: [] # TO OVERRIDE
       interval: 10s
       timeout: 5s
       retries: 10
@@ -24,11 +24,11 @@ services:
         limits:
           memory: 700m
 
-  postgres-service:
+  database-service:
     extends:
       service: network-service
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d admin-db -U admin" ]
+      test: [] # TO OVERRIDE
       interval: 10s
       timeout: 5s
       retries: 5

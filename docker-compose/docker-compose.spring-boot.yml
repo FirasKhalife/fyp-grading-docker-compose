@@ -11,6 +11,9 @@ services:
       - DATABASE_URL=jdbc:postgresql://admin-db:5432/admin-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/master
+      - APPLICATION_CLIENT_ID=back_app
+      - APPLICATION_CLIENT_SECRET=gEgYGd71XjyUkMGouan0WU7w2XMbWwqL
       - EVALUATION_SERVICE_NAME=${EVALUATION_SERVICE_NAME}
       - NOTIFICATION_SERVICE_NAME=${NOTIFICATION_SERVICE_NAME}
       - SPRING_APPLICATION_NAME=${ADMIN_SERVICE_NAME}
@@ -36,6 +39,7 @@ services:
     container_name: ${EVALUATION_SERVICE_NAME}
     environment:
       - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin&authMechanism=SCRAM-SHA-1
+      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/master
       - ADMIN_SERVICE_NAME=${ADMIN_SERVICE_NAME}
       - RUBRIC_SERVICE_NAME=${RUBRIC_SERVICE_NAME}
       - SPRING_APPLICATION_NAME=${EVALUATION_SERVICE_NAME}
@@ -63,6 +67,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://notification-db:5432/notification-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/master
       - SPRING_APPLICATION_NAME=${NOTIFICATION_SERVICE_NAME}
       - BUILD_VERSION=1.0
       - PORT=8080
@@ -88,6 +93,7 @@ services:
       - DATABASE_URL=jdbc:postgresql://rubric-db:5432/rubric-db
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/master
       - SPRING_APPLICATION_NAME=${RUBRIC_SERVICE_NAME}
       - BUILD_VERSION=1.0
       - PORT=8080

@@ -1,7 +1,6 @@
 version: '3.7'
 name: ${PROJECT_NAME}
 
-# TODO: ADD VOLUMES
 services:
   admin-db:
     image: postgres:latest
@@ -12,9 +11,13 @@ services:
       POSTGRES_DB: admin-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+    volumes:
+      - admin-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d admin-db -U admin" ]
     extends:
       file: common.yml
-      service: postgres-service
+      service: database-service
 
   mongodb:
     image: mongo:latest
@@ -25,12 +28,10 @@ services:
       MONGO_INITDB_DATABASE: evaluation-db
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb-data:/data/db
     healthcheck:
       test: ["CMD-SHELL", "mongo --eval 'db.adminCommand(\"ping\")'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
     expose:
       - 27017
     extends:
@@ -46,9 +47,13 @@ services:
       POSTGRES_DB: notification-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d notification-db -U admin" ]
     extends:
       file: common.yml
-      service: postgres-service
+      service: database-service
 
   rubric-db:
     image: postgres:latest
@@ -59,9 +64,24 @@ services:
       POSTGRES_DB: rubric-db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+    volumes:
+      - rubric-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d rubric-db -U admin" ]
     extends:
       file: common.yml
-      service: postgres-service
+      service: database-service
+
+volumes:
+  admin-db-data:
+    name: admin-db-data
+  mongodb-data:
+    name: mongodb-data
+  notification-db-data:
+    name: notification-db-data
+  rubric-db-data:
+    name: rubric-db-data
+
 
 networks:
   fyp-grading:
