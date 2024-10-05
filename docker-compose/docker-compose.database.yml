@@ -1,0 +1,88 @@
+version: '3.7'
+name: ${PROJECT_NAME}
+
+services:
+  admin-db:
+    image: postgres:latest
+    container_name: admin-db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: admin-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - admin-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d admin-db -U admin" ]
+    extends:
+      file: common.yml
+      service: database-service
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: evaluation-db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --eval 'db.adminCommand(\"ping\")'"]
+    expose:
+      - 27017
+    extends:
+      file: common.yml
+      service: network-service
+
+  notification-db:
+    image: postgres:latest
+    container_name: notification-db
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_DB: notification-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d notification-db -U admin" ]
+    extends:
+      file: common.yml
+      service: database-service
+
+  rubric-db:
+    image: postgres:latest
+    container_name: rubric-db
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: rubric-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - rubric-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d rubric-db -U admin" ]
+    extends:
+      file: common.yml
+      service: database-service
+
+volumes:
+  admin-db-data:
+    name: admin-db-data
+  mongodb-data:
+    name: mongodb-data
+  notification-db-data:
+    name: notification-db-data
+  rubric-db-data:
+    name: rubric-db-data
+
+
+networks:
+  fyp-grading:
+    name: ${GLOBAL_NETWORK_NAME}

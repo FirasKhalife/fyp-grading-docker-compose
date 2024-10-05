@@ -1,0 +1,20 @@
+version: '3.7'
+name: ${PROJECT_NAME}
+
+services:
+  frontend:
+    build:
+      context: ../../fyp-grading-frontend
+    image: ${FRONTEND_SERVICE_NAME}:1.0
+    container_name: ${FRONTEND_SERVICE_NAME}
+    ports:
+      - '80:80'
+    expose:
+      - 80
+    extends:
+      file: common.yml
+      service: network-service
+
+networks:
+  fyp-grading:
+    name: ${GLOBAL_NETWORK_NAME}

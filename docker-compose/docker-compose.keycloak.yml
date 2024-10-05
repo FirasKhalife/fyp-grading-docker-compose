@@ -1,0 +1,64 @@
+version: '3.7'
+name: ${PROJECT_NAME}
+
+services:
+  keycloak-db:
+    image: postgres:latest
+    container_name: keycloak-db
+    ports:
+      - '5435:5432'
+    environment:
+      POSTGRES_DB: keycloak-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d keycloak-db -U admin" ]
+    extends:
+      file: common.yml
+      service: database-service
+
+  keycloak-server:
+    build: ./config/keycloak
+    image: keycloak-server
+    container_name: keycloak-server
+#    volumes:
+#      - ./config/keycloak/realm-config:/opt/keycloak/data/import
+#      - ./config/keycloak/theme:/opt/keycloak/themes/default-theme
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://keycloak-db:5432/keycloak-db
+      - KC_DB_USERNAME=admin
+      - KC_DB_PASSWORD=admin
+      - KC_HOSTNAME=localhost
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      - KC_MANAGEMENT_PORT=9000
+      - KC_HTTPS_PORT=8443
+      - KC_HTTP_PORT=8080
+      - KC_HTTP_ENABLED=true
+    ports:
+      - '7080:8080'
+      - '9443:8443'
+      - '9000:9000'
+    expose:
+      - 9080
+      - 9443
+      - 9000
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    extends:
+      file: common.yml
+      service: network-service
+
+volumes:
+  keycloak-db-data:
+    name: keycloak-db-data
+
+networks:
+  fyp-grading:
+    name: ${GLOBAL_NETWORK_NAME}

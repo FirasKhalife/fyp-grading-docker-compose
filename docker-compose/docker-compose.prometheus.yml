@@ -1,0 +1,18 @@
+version: '3.7'
+name: ${PROJECT_NAME}
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    extends:
+      file: common.yml
+      service: network-service
+
+networks:
+  fyp-grading:
+    name: ${GLOBAL_NETWORK_NAME}

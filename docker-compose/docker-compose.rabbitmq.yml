@@ -1,0 +1,29 @@
+version: '3.7'
+name: ${PROJECT_NAME}
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.0-rc-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    expose:
+      - 5672
+      - 15672
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    extends:
+      file: common.yml
+      service: network-service
+
+networks:
+  fyp-grading:
+    name: ${GLOBAL_NETWORK_NAME}
