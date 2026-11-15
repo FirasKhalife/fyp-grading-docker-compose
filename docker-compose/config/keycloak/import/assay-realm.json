@@ -1,0 +1,227 @@
+{
+  "realm": "assay",
+  "displayName": "Assay",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": true,
+  "bruteForceProtected": true,
+  "failureFactor": 30,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 3600,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Coordinator: sees every team, edits rubrics, schedules, releases results"
+      },
+      {
+        "name": "REVIEWER",
+        "description": "Faculty member who grades teams (jury or advisor per team)"
+      },
+      {
+        "name": "STUDENT",
+        "description": "Team member: sees their team and released results"
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-assay",
+    "description": "No account-console rights: the demo accounts are shared and must not be editable",
+    "composite": false
+  },
+  "clients": [
+    {
+      "clientId": "assay-spa",
+      "name": "Assay web app",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "rootUrl": "http://localhost:5173",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email",
+        "basic"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "00000000-0000-4000-a000-000000000001",
+      "username": "rania.haddad",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "rania.haddad@usj.edu.lb",
+      "firstName": "Rania",
+      "lastName": "Haddad",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN",
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000002",
+      "username": "jane.smith",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "jane.smith@usj.edu.lb",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000003",
+      "username": "john.doe",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "john.doe@usj.edu.lb",
+      "firstName": "John",
+      "lastName": "Doe",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000004",
+      "username": "michael.johnson",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "michael.johnson@usj.edu.lb",
+      "firstName": "Michael",
+      "lastName": "Johnson",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000005",
+      "username": "emily.clark",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "emily.clark@usj.edu.lb",
+      "firstName": "Emily",
+      "lastName": "Clark",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000006",
+      "username": "karim.nassar",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "karim.nassar@usj.edu.lb",
+      "firstName": "Karim",
+      "lastName": "Nassar",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000007",
+      "username": "lea.mansour",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "lea.mansour@usj.edu.lb",
+      "firstName": "Lea",
+      "lastName": "Mansour",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REVIEWER"
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000101",
+      "username": "nour.khoury",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "nour.khoury@usj.edu.lb",
+      "firstName": "Nour",
+      "lastName": "Khoury",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "STUDENT"
+      ]
+    }
+  ]
+}

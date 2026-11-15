@@ -9,10 +9,9 @@ services:
     container_name: ${REGISTRY_SERVER_NAME}
     environment:
       - SPRING_APPLICATION_NAME=${REGISTRY_SERVER_NAME}
+      - EUREKA_HOSTNAME=registry-server
       - BUILD_VERSION=1.0
       - PORT=8761
-    ports:
-      - '8761:8761'
     expose:
       - 8761
     healthcheck:
@@ -30,11 +29,13 @@ services:
       - GIT_REPO_URI=${GIT_REPO_URI}
       - GIT_BRANCH=${GIT_BRANCH}
       - SPRING_APPLICATION_NAME=${CONFIG_SERVER_NAME}
-      - SPRING_PROFILES_ACTIVE=git,prod
+      # native: serve the local fyp-grading-config checkout (mounted below); use "git" to read GIT_REPO_URI instead.
+      - SPRING_PROFILES_ACTIVE=${CONFIG_SERVER_PROFILE:-native}
+      - CONFIG_DIR=/config
       - BUILD_VERSION=1.0
       - PORT=8071
-    ports:
-      - '8071:8071'
+    volumes:
+      - ../../fyp-grading-config:/config:ro
     expose:
       - 8071
     depends_on:
@@ -54,14 +55,11 @@ services:
     image: ${API_GATEWAY_NAME}:1.0
     container_name: ${API_GATEWAY_NAME}
     environment:
-      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/master
+      - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - AUTH_SERVER_URL=http://localhost:7080/realms/master
-      - ALLOWED_ORIGINS=http://localhost:[*]
-      - ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
-      - ALLOWED_HEADERS=Authorization,Content-Type
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:[*]}
       - SPRING_APPLICATION_NAME=${API_GATEWAY_NAME}
       - BUILD_VERSION=1.0
       - PORT=9191

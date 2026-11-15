@@ -1,49 +1,72 @@
+# fyp-grading-docker-compose
 
-# FYP Grading: Docker Compose
+Runs **Assay**, the final-year-project grading platform, on one machine:
 
-This repository contains Docker Compose configurations for setting up the environment for the FYP Grading project. 
-Included is a shell script `docker-compose.sh` which serves as a convenient way to run Docker Compose commands 
-that include all _**docker-compose.X.yml**_ files in the _**docker-compose**_ directory. 
-This setup provides a robust framework for running a complex multi-service architecture with Docker Compose, 
-facilitating easy development and deployment processes.
+- seven Spring services
+- Keycloak with the demo realm
+- Postgres, MongoDB, RabbitMQ and Redis
+- optional Prometheus, Grafana and Loki
 
-## Directory Structure Overview:
-- **docker-compose.sh** - Shell script to run Docker Compose with all docker-compose files included.
-- **docker-compose/** - Folder containing all docker-compose YAML files for individual services, as well as the following:
-  - **config/** - Configuration files for different services.
-  - **.env** - Local and non-sensitive environment variables for Docker Compose. Verify its contents and modify it if necessary to suit your local environment or deployment settings.
-  - **common.yml** Common configuration inherited by multiple Docker services. 
+How the pieces fit together, and how a grade flows through them: [docs/architecture.md](docs/architecture.md).
 
-## Using the `docker-compose.sh` Script:
-The `docker-compose.sh` script is designed to simplify the execution of Docker Compose for the entire project. 
-It automatically includes all the Docker Compose files in the command, so is an alias for the regular **docker-compose** command. 
-Use it as the regular command, such as the following:
+## Layout
 
-### To start all services:
+| Path | What |
+|---|---|
+| `docker-compose.sh` | Runs `docker compose` with every `docker-compose/docker-compose.*.yml` file |
+| `docker-compose/.env` | Non-secret settings (service names, URLs). Passwords here are local defaults only; real ones come from the environment |
+| `docker-compose/config/keycloak/` | The Keycloak image, and `import/assay-realm.json`: realm `assay`, roles `ADMIN` / `REVIEWER` / `STUDENT`, the eight demo personas, and the public `assay-spa` client |
+| `seed/` | The generator of the demo data each service loads into a visitor's private copy ([seed/README.md](seed/README.md)) |
+| `e2e/smoke.sh` | End-to-end smoke test of a running stack, through the gateway with real tokens |
+| `docs/` | Architecture |
+
+The service repositories are expected next to this one (`../fyp-grading-admin-service`, and so on).
+
+## Run
+
 ```bash
-./docker-compose.sh up
-```
-Append **-d** for detached mode.
-
-### To start a specific service:
-```bash
-./docker-compose.sh up <service-name>
-```
-Append **-d** for detached mode.
-
-### To stop services:
-```bash
-./docker-compose.sh down
+./docker-compose.sh up -d --build
 ```
 
-### To view the whole compiled docker-compose file:
+| URL | What |
+|---|---|
+| http://localhost:9191 | The API gateway (`/api/**`, `/swagger-ui.html`) |
+| http://localhost:7080 | Keycloak (realm `assay`) |
+
+The config server serves the local `../fyp-grading-config` checkout (`native` profile). Set
+`CONFIG_SERVER_PROFILE=git` to read `GIT_REPO_URI` instead.
+
+## Demo personas
+
+All of them share the password `assay-demo`. It's published on purpose: the accounts can't change anything outside
+the visitor's own demo copy.
+
+| Persona | Username | Roles |
+|---|---|---|
+| Coordinator | `rania.haddad` | ADMIN, REVIEWER |
+| Jury member | `jane.smith` | REVIEWER |
+| Advisor | `karim.nassar` | REVIEWER |
+| Student | `nour.khoury` | STUDENT |
+| Other faculty | `john.doe`, `michael.johnson`, `emily.clark`, `lea.mansour` | REVIEWER |
+
+The web app signs a persona in with one click: it uses the password grant on `assay-spa`. "Sign in with email" uses
+the authorization code flow with PKCE.
+
+## Smoke test
+
 ```bash
-./docker-compose.sh config
+e2e/smoke.sh                                   # gateway http://localhost:9191, Keycloak http://localhost:7080
 ```
 
-## Important Notes:
-- Make sure to run the script from the root directory of this repository, in a Unix-based environment.
-- Ensure that the script has executable permissions:
-```bash
-chmod +x docker-compose.sh
-```
+The script walks the demo's key moment:
+
+1. Persona sign-in, and the creation of a private demo copy.
+2. Jane finishes and submits the Team Beta final report, and can't change it afterwards.
+3. RabbitMQ aggregates the team grade. The coordinator and the jury get notifications, and the feed and the live
+   SSE stream show it.
+4. The coordinator releases the final report.
+5. Scoping holds:
+   - the student's view is scoped to their team
+   - anonymous and internal paths are closed
+   - another visitor sees nothing of this copy
+6. A reset brings the copy back to the seed.
