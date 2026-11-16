@@ -5,7 +5,7 @@ services:
     image: postgres:16
     container_name: keycloak-db
     ports:
-      - '5435:5432'
+      - '127.0.0.1:5435:5432'
     environment:
       POSTGRES_DB: keycloak-db
       POSTGRES_USER: admin
@@ -38,8 +38,8 @@ services:
       - KC_HTTP_PORT=8080
       - KC_HTTP_ENABLED=true
     ports:
-      - '7080:8080'
-      - '9000:9000'
+      - '127.0.0.1:7080:8080'
+      - '127.0.0.1:9000:9000'
     expose:
       - 9080
       - 9000

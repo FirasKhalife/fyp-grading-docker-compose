@@ -8,8 +8,7 @@
   "editUsernameAllowed": false,
   "rememberMe": false,
   "loginWithEmailAllowed": true,
-  "bruteForceProtected": true,
-  "failureFactor": 30,
+  "bruteForceProtected": false,
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 3600,
   "ssoSessionMaxLifespan": 36000,
@@ -46,16 +45,15 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:*/*",
-        "http://127.0.0.1:*/*"
+        "${ASSAY_SPA_ORIGIN:http://localhost:5173}/*"
       ],
       "webOrigins": [
         "+"
       ],
-      "rootUrl": "http://localhost:5173",
+      "rootUrl": "${ASSAY_SPA_ORIGIN:http://localhost:5173}",
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "+"
+        "post.logout.redirect.uris": "${ASSAY_SPA_ORIGIN:http://localhost:5173}/*"
       },
       "defaultClientScopes": [
         "web-origins",
@@ -222,6 +220,125 @@
       "realmRoles": [
         "STUDENT"
       ]
+    }
+  ],
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "CONFIGURE_TOTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "TERMS_AND_CONDITIONS",
+      "name": "TERMS_AND_CONDITIONS",
+      "providerId": "TERMS_AND_CONDITIONS",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "UPDATE_PASSWORD",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "UPDATE_PROFILE",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "VERIFY_EMAIL",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_PROFILE",
+      "name": "VERIFY_PROFILE",
+      "providerId": "VERIFY_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {}
+    },
+    {
+      "alias": "delete_account",
+      "name": "delete_account",
+      "providerId": "delete_account",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 70,
+      "config": {}
+    },
+    {
+      "alias": "delete_credential",
+      "name": "delete_credential",
+      "providerId": "delete_credential",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 80,
+      "config": {}
+    },
+    {
+      "alias": "update_user_locale",
+      "name": "update_user_locale",
+      "providerId": "update_user_locale",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 90,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register",
+      "name": "webauthn-register",
+      "providerId": "webauthn-register",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 100,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register-passwordless",
+      "name": "webauthn-register-passwordless",
+      "providerId": "webauthn-register-passwordless",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 110,
+      "config": {}
+    },
+    {
+      "alias": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "name": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 120,
+      "config": {}
+    },
+    {
+      "alias": "idp_link",
+      "name": "idp_link",
+      "providerId": "idp_link",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 130,
+      "config": {}
     }
   ]
 }

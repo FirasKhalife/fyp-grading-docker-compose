@@ -1,0 +1,102 @@
+# Production override (review C2). Use it on top of the dev files:
+#
+#   cd docker-compose
+#   docker compose $(for f in docker-compose.*.yml; do printf -- '-f %s ' "$f"; done) -f prod/compose.prod.yml \
+#     --env-file .env --env-file prod/.env.prod up -d
+#
+# - Nothing is published on a host port: Docker's port rules bypass ufw, and the plan is "no inbound ports except
+#   SSH". cloudflared joins the fyp-grading network and reaches the gateway (api-gateway:9191) and Keycloak
+#   (keycloak-server:8080) by name. Route only ^/realms/assay/ and ^/resources/ to Keycloak, never /admin.
+# - Every secret comes from prod/.env.prod (untracked; see prod/.env.prod.example). A missing one stops `up`.
+# - Grafana, Loki, MinIO and Alloy only start with `--profile observability`.
+x-no-ports: &no-ports
+  ports: !reset []
+
+services:
+  admin-db:
+    <<: *no-ports
+    environment:
+      POSTGRES_USER: ${DB_USER:?set DB_USER in prod/.env.prod}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in prod/.env.prod}
+  notification-db:
+    <<: *no-ports
+    environment:
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+  rubric-db:
+    <<: *no-ports
+    environment:
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+  keycloak-db:
+    <<: *no-ports
+    environment:
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+  mongodb:
+    <<: *no-ports
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:?}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:?}
+  rabbitmq:
+    <<: *no-ports
+    image: rabbitmq:4.1-alpine   # no management UI in production
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:?}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?}
+  redis:
+    <<: *no-ports
+  frontend:
+    <<: *no-ports
+
+  keycloak-server:
+    <<: *no-ports
+    environment:
+      - KC_DB_USERNAME=${DB_USER:?}
+      - KC_DB_PASSWORD=${DB_PASSWORD:?}
+      - KC_HOSTNAME=${KEYCLOAK_PUBLIC_URL:?set KEYCLOAK_PUBLIC_URL, e.g. https://auth.example.dev}
+      - KC_PROXY_HEADERS=xforwarded
+      # Used once to create the master admin; delete that user after first boot (docs/deploy-hardening.md).
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN_USER:?}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:?}
+      # Replaces ${ASSAY_SPA_ORIGIN} in the realm export: the only redirect URI and web origin allowed.
+      - ASSAY_SPA_ORIGIN=${ASSAY_SPA_ORIGIN:?set ASSAY_SPA_ORIGIN, e.g. https://grading.example.dev}
+
+  admin-service:
+    environment:
+      - DATABASE_USERNAME=${DB_USER:?}
+      - DATABASE_PASSWORD=${DB_PASSWORD:?}
+  notification-service:
+    environment:
+      - DATABASE_USERNAME=${DB_USER:?}
+      - DATABASE_PASSWORD=${DB_PASSWORD:?}
+  rubric-service:
+    environment:
+      - DATABASE_USERNAME=${DB_USER:?}
+      - DATABASE_PASSWORD=${DB_PASSWORD:?}
+  evaluation-service:
+    environment:
+      - DATABASE_URL=mongodb://${DB_USER:?}:${DB_PASSWORD:?}@mongodb:27017/evaluation-db?authSource=admin
+
+  api-gateway:
+    <<: *no-ports
+    environment:
+      - ALLOWED_ORIGINS=${ASSAY_SPA_ORIGIN:?}
+      # Trust CF-Connecting-IP only from cloudflared's address on the Docker network (review H3).
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:?set TRUSTED_PROXIES to cloudflared's address or subnet}
+
+  prometheus:
+    <<: *no-ports
+    profiles: [observability]
+  grafana:
+    <<: *no-ports
+    profiles: [observability]
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?}
+  read: {<<: *no-ports, profiles: [observability]}
+  write: {<<: *no-ports, profiles: [observability]}
+  backend: {<<: *no-ports, profiles: [observability]}
+  gateway: {<<: *no-ports, profiles: [observability]}
+  alloy: {<<: *no-ports, profiles: [observability]}
+  minio: {<<: *no-ports, profiles: [observability]}

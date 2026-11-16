@@ -6,6 +6,8 @@ services:
   spring-service:
     extends:
       service: network-service
+    # Review H5: come back after an out-of-memory exit (the JVM is started with ExitOnOutOfMemoryError).
+    restart: unless-stopped
     environment:
       - REGISTRY_SERVER_URL=${REGISTRY_SERVER_URL}
       - CONFIG_SERVER_URL=${CONFIG_SERVER_URL}

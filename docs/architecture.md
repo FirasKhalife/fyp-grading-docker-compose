@@ -22,9 +22,7 @@ flowchart LR
     EVAL -->|"rubric snapshot"| RUB
     ADMIN -->|"create / reset demo copy"| RUB & EVAL & NOTIF
 
-    ADMIN -- "assay.grades" --> MQ{{RabbitMQ}}
-    MQ -- "aggregate" --> ADMIN
-    ADMIN -- "assay.notifications" --> MQ
+    ADMIN -- "assay.notifications" --> MQ{{RabbitMQ}}
     ADMIN -- "assay.activity" --> MQ
     EVAL -- "assay.activity" --> MQ
     MQ --> NOTIF
@@ -45,12 +43,14 @@ flowchart LR
    whether the reviewer holds that assessment's role on the team. If nothing was saved yet, it builds a blank form
    from rubric-service.
 2. Drafts autosave (`PUT`). Each level change is recorded for the audit trail and published to `assay.activity`.
-3. On submit, evaluation-service computes the score (Σ level × weight ÷ 4). It hands the grade to admin-service first
-   (idempotent on the evaluation id), and only then locks the evaluation. If the hand-off fails, the evaluation
-   stays an editable draft, and a retry is always safe.
-4. admin-service stores the grade and publishes `assay.grades`. Its own consumer locks the team row and recomputes
-   the team grade (a plain average) and the final grade (15/0/25/30/30, which needs all five assessments). It
-   announces only the state changes, so a redelivered message can't count a grade twice.
+3. On submit, evaluation-service computes the score (Σ level × weight ÷ 4) and freezes the evaluation
+   (`SUBMITTING`): autosaves are refused with 409 `evaluation-submitting`, so the levels can't drift from the score.
+   It then hands the grade to admin-service (idempotent on the evaluation id) and marks it `SUBMITTED`. If the
+   hand-off fails, the evaluation goes back to an editable draft, and a retry is always safe.
+4. admin-service stores the grade and, in the same transaction, locks the team row and recomputes the team grade
+   (a plain average) and the final grade (15/0/25/30/30, which needs all five assessments). Once a grade is final,
+   its reviewer set and grades can't change (409 `assessment-final`). It announces only the state changes, so a
+   retried hand-off can't count a grade twice.
 5. The announcements go to `assay.notifications` (with the recipients resolved) and `assay.activity`.
    notification-service stores one row per recipient and pushes it live over Server-Sent Events.
 
