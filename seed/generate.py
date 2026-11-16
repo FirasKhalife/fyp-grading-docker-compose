@@ -21,7 +21,8 @@ from rubric import (ASSESSMENT_NAMES, ASSESSMENT_ROLE, ASSESSMENT_WEIGHTS, ASSES
                     RUBRICS, THEMES)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
+# The service repos sit next to this one. ASSAY_WORKSPACE overrides it (CI writes to a scratch folder).
+ROOT = os.environ.get("ASSAY_WORKSPACE") or os.path.dirname(os.path.dirname(HERE))
 
 PROP, PROG, ADV, FR, FP = ASSESSMENTS
 

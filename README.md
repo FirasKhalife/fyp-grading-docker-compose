@@ -70,3 +70,24 @@ The script walks the demo's key moment:
    - anonymous and internal paths are closed
    - another visitor sees nothing of this copy
 6. A reset brings the copy back to the seed.
+
+## Shared code and CI
+
+Each service is a self-contained repository, so a few files are copied between them instead of published as a
+library:
+
+- the `common/` package (demo-session scoping, security, problem details)
+- `checkstyle.xml`, the `Dockerfile`, `.gitattributes`
+- the JSON fixtures of the payloads services exchange (`src/test/resources/contracts`)
+
+`scripts/check-shared-code.sh` checks that every copy is identical. Each service's `PayloadContractsTest` checks
+that it writes exactly a fixture's fields and can read the fixtures it consumes.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request:
+
+- ShellCheck on the scripts
+- validation of the compose files and the Keycloak realm
+- the seed generator's own checks
+
+A manual and weekly job also checks out every service repo and runs `check-shared-code.sh`. It also confirms that
+the committed seeds are exactly what the generator produces.

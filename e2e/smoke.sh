@@ -35,7 +35,7 @@ status() { cat /tmp/assay-smoke-status; }
 echo "Assay smoke test against $GW (demo session $SESSION)"
 
 # Right after a start, the gateway needs a few seconds to learn where the services are.
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   curl -sf -o /dev/null "$GW/api/demo/personas" && break
   sleep 2
 done
@@ -70,14 +70,14 @@ submitted="$(call "$JANE" POST "/api/my-evaluations/$beta/FINAL_REPORT/submit" "
 call "$JANE" PUT "/api/my-evaluations/$beta/FINAL_REPORT" "$form" > /dev/null
 [ "$(status)" = 409 ] && ok "a submitted evaluation can't be changed (409)" || fail "edit after submit: $(status)"
 
-for i in $(seq 1 20); do
+for _ in $(seq 1 20); do
   grade="$(call "$RANIA" GET "/api/teams/$beta" | json 'd["assessments"][3]["grade"]')"
   [ "$grade" != None ] && break
   sleep 1
 done
 [ "$grade" != None ] && ok "RabbitMQ aggregation: Beta final report grade is final ($grade)" || fail "no team grade"
 
-for i in $(seq 1 10); do
+for _ in $(seq 1 10); do
   call "$RANIA" GET /api/notifications | grep -q "Final report for Team Beta is final" && break
   sleep 1
 done
