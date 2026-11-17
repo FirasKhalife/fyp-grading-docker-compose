@@ -46,11 +46,15 @@ the visitor's own demo copy.
 | Coordinator | `rania.haddad` | ADMIN, REVIEWER |
 | Jury member | `jane.smith` | REVIEWER |
 | Advisor | `karim.nassar` | REVIEWER |
-| Student | `nour.khoury` | STUDENT |
+| Student, Team Alpha (every result released) | `nour.khoury` | STUDENT |
+| Student, Team Beta (waiting on results) | `ahmad.fares` | STUDENT |
 | Other faculty | `john.doe`, `michael.johnson`, `emily.clark`, `lea.mansour` | REVIEWER |
 
 The web app signs a persona in with one click: it uses the password grant on `assay-spa`. "Sign in with email" uses
 the authorization code flow with PKCE.
+
+A realm import never updates an existing realm. On a Keycloak imported before a persona was added, run
+`scripts/keycloak-reset-personas.sh` once: it creates the missing personas with their fixed ids.
 
 ## Smoke test
 

@@ -33,13 +33,13 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Keycloak realm export is valid JSON with the four personas
+      - name: Keycloak realm export is valid JSON with the five personas
         run: |
           python - <<'PY'
           import json
           realm = json.load(open("docker-compose/config/keycloak/import/assay-realm.json"))
           users = {u["username"] for u in realm["users"]}
-          missing = {"rania.haddad", "jane.smith", "karim.nassar", "nour.khoury"} - users
+          missing = {"rania.haddad", "jane.smith", "karim.nassar", "nour.khoury", "ahmad.fares"} - users
           assert realm["realm"] == "assay", realm["realm"]
           assert not missing, f"missing personas: {missing}"
           assert all(c["publicClient"] for c in realm["clients"]), "the SPA client must be public (no secret)"

@@ -220,6 +220,25 @@
       "realmRoles": [
         "STUDENT"
       ]
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000102",
+      "username": "ahmad.fares",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "ahmad.fares@usj.edu.lb",
+      "firstName": "Ahmad",
+      "lastName": "Fares",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assay-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "STUDENT"
+      ]
     }
   ],
   "requiredActions": [

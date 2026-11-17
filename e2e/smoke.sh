@@ -42,7 +42,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 personas="$(curl -sf "$GW/api/demo/personas")"
-[ "$(echo "$personas" | json 'len(d)')" = 4 ] && ok "four personas, public" || fail "personas"
+[ "$(echo "$personas" | json 'len(d)')" = 5 ] && ok "five personas, public" || fail "personas"
 
 JANE="$(token jane.smith)"; RANIA="$(token rania.haddad)"; NOUR="$(token nour.khoury)"
 ok "persona sign-in through Keycloak (realm assay)"

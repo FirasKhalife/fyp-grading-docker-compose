@@ -36,7 +36,8 @@ PEOPLE = {
     "karim.nassar": ("Karim Nassar", "00000000-0000-4000-a000-000000000006"),
     "lea.mansour": ("Lea Mansour", "00000000-0000-4000-a000-000000000007"),
 }
-NOUR_ID = "00000000-0000-4000-a000-000000000101"
+NOUR_ID = "00000000-0000-4000-a000-000000000101"   # student persona, Team Alpha: every result released
+AHMAD_ID = "00000000-0000-4000-a000-000000000102"  # student persona, Team Beta: waiting on results
 
 
 def uid(u):
@@ -112,7 +113,7 @@ TEAMS = [
     dict(slug="beta", name="Beta", title="Clinic queue management with SMS notifications",
          desc="A web queue for outpatient clinics that texts patients when their turn is near, so they can wait outside the crowded waiting room.",
          advisor="emily.clark", jury=["jane.smith", "john.doe", "michael.johnson"],
-         students=[("Ahmad", "Fares"), ("Christelle", "Nader"), ("Georges", "Hanna"), ("Yara", "Saliba")],
+         students=[("Ahmad", "Fares", AHMAD_ID), ("Christelle", "Nader"), ("Georges", "Hanna"), ("Yara", "Saliba")],
          slot=(D(1, "09:00"), "Amphi A")),
     dict(slug="gamma", name="Gamma", title="Arabic handwriting OCR for archived documents",
          desc="A recognition pipeline that turns scanned, handwritten Arabic registry pages into searchable text for a municipal archive.",
@@ -605,6 +606,14 @@ for a in ASSESSMENTS:
              read=(a != FP))
 note(NOUR_ID, "DEFENSE_SCHEDULED", "Your defense is scheduled: %s of the defense week, 09:00, Amphi A (40 minutes)." % DAY_OF[-1],
      D(-30, "10:00"), link("SCHEDULE", "alpha"))
+
+# Ahmad (student, Team Beta): only the results released so far, and tomorrow's defense
+for a in ASSESSMENTS:
+    at, teams = RELEASES[a]
+    if "beta" in teams:
+        note(AHMAD_ID, "RESULTS_RELEASED", "Your %s results are available." % an(a), at, link("STUDENT_RESULTS", "beta", a), read=True)
+note(AHMAD_ID, "DEFENSE_SCHEDULED", "Your defense is confirmed: tomorrow at 09:00, Amphi A (40 minutes).", DELTA_MOVE,
+     link("SCHEDULE", "beta"))
 
 NOTES.sort(key=lambda n: -tmin(n["createdAt"]))  # stable: newest first
 for i, n in enumerate(NOTES, 1):
