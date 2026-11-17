@@ -1,12 +1,11 @@
-version: '3.7'
 name: ${PROJECT_NAME}
 
 services:
   admin-db:
-    image: postgres:latest
+    image: postgres:16
     container_name: admin-db
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     environment:
       POSTGRES_DB: admin-db
       POSTGRES_USER: admin
@@ -20,10 +19,10 @@ services:
       service: database-service
 
   mongodb:
-    image: mongo:latest
+    image: mongo:7
     container_name: mongodb
     ports:
-      - '27017:27017'
+      - '127.0.0.1:27017:27017'
     environment:
       MONGO_INITDB_DATABASE: evaluation-db
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -31,7 +30,7 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongo --eval 'db.adminCommand(\"ping\")'"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok' | grep 1"]
     expose:
       - 27017
     extends:
@@ -39,10 +38,10 @@ services:
       service: network-service
 
   notification-db:
-    image: postgres:latest
+    image: postgres:16
     container_name: notification-db
     ports:
-      - '5434:5432'
+      - '127.0.0.1:5434:5432'
     environment:
       POSTGRES_DB: notification-db
       POSTGRES_USER: admin
@@ -56,10 +55,10 @@ services:
       service: database-service
 
   rubric-db:
-    image: postgres:latest
+    image: postgres:16
     container_name: rubric-db
     ports:
-      - '5433:5432'
+      - '127.0.0.1:5433:5432'
     environment:
       POSTGRES_DB: rubric-db
       POSTGRES_USER: admin

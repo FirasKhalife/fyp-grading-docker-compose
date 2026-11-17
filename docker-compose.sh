@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker_compose_command="docker-compose"
+docker_compose_command="docker compose"
 
 # Append all docker-compose YAML files
 for file in docker-compose/docker-compose.*.yml; do

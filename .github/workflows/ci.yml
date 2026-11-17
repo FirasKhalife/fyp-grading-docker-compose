@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays: the cross-repo consistency check
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Lint scripts, compose files, realm and seed
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: ShellCheck the scripts
+        run: shellcheck --severity=warning docker-compose.sh e2e/*.sh scripts/*.sh
+
+      # The service repos aren't checked out here, so build paths are not resolved.
+      - name: Compose files are valid
+        working-directory: docker-compose
+        run: |
+          args=(); for f in docker-compose.*.yml; do args+=(-f "$f"); done
+          docker compose "${args[@]}" config --no-path-resolution --quiet
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Keycloak realm export is valid JSON with the five personas
+        run: |
+          python - <<'PY'
+          import json
+          realm = json.load(open("docker-compose/config/keycloak/import/assay-realm.json"))
+          users = {u["username"] for u in realm["users"]}
+          missing = {"rania.haddad", "jane.smith", "karim.nassar", "nour.khoury", "ahmad.fares"} - users
+          assert realm["realm"] == "assay", realm["realm"]
+          assert not missing, f"missing personas: {missing}"
+          assert all(c["publicClient"] for c in realm["clients"]), "the SPA client must be public (no secret)"
+          import os
+          assert realm.get("loginTheme") == "assay", "the realm must use the Assay login theme"
+          assert os.path.isfile("docker-compose/config/keycloak/themes/assay/login/theme.properties"), "the Assay theme is missing"
+          print(f"realm {realm['realm']}: {len(users)} users, {len(realm['clients'])} client(s)")
+          PY
+
+      # The generator asserts the seed reproduces the design's grades through the real grade maths.
+      - name: Seed generator runs and its checks pass
+        run: ASSAY_WORKSPACE="$RUNNER_TEMP/ws" python seed/generate.py > "$RUNNER_TEMP/seed.log" && tail -5 "$RUNNER_TEMP/seed.log"
+
+  cross-repo:
+    name: Service repos agree (shared code, fixtures, seeds)
+    # Needs the service repos' default branches; run it by hand or weekly so it never blocks a pull request here.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: fyp-grading-docker-compose
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-admin-service, path: fyp-grading-admin-service}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-evaluation-service, path: fyp-grading-evaluation-service}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-rubric-service, path: fyp-grading-rubric-service}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-notification-service, path: fyp-grading-notification-service}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-api-gateway, path: fyp-grading-api-gateway}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-config-server, path: fyp-grading-config-server}
+      - uses: actions/checkout@v7
+        with: {repository: FirasKhalife/fyp-grading-registry-server, path: fyp-grading-registry-server}
+
+      - name: Shared code, build files and payload fixtures are identical
+        run: bash fyp-grading-docker-compose/scripts/check-shared-code.sh "$GITHUB_WORKSPACE"
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: The services' committed seeds are what the generator produces
+        run: |
+          python fyp-grading-docker-compose/seed/generate.py > /dev/null
+          for r in admin-service evaluation-service rubric-service notification-service; do
+            git -C "fyp-grading-$r" diff --exit-code -- src/main/resources/demo/seed.json
+          done

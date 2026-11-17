@@ -1,34 +1,27 @@
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
-# TODO: Refactor and complete
+# Every service exposes /actuator/prometheus on the internal network only (the gateway on its management port).
 scrape_configs:
-  - job_name: 'admin-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'admin-service:8080' ]
-  - job_name: 'evaluation-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'evaluation:8080' ]
-  - job_name: 'notification-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'notification-service:8080' ]
-  - job_name: 'rubric-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'rubric-service:8080' ]
-  - job_name: 'api-gateway'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'api-gateway:8072' ]
-  - job_name: 'registry-server'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'registry-server:8761' ]
-  - job_name: 'config-server'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: [ 'config-server:9191' ]
+  - job_name: admin-service
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['admin-service:8080']}]
+  - job_name: evaluation-service
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['evaluation-service:8080']}]
+  - job_name: notification-service
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['notification-service:8080']}]
+  - job_name: rubric-service
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['rubric-service:8080']}]
+  - job_name: api-gateway
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['api-gateway:9192']}]
+  - job_name: registry-server
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['registry-server:8761']}]
+  - job_name: config-server
+    metrics_path: /actuator/prometheus
+    static_configs: [{targets: ['config-server:8071']}]
