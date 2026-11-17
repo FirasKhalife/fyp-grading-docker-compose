@@ -144,4 +144,11 @@ after="$(curl -s -o "$TMP/kc-after" -w '%{http_code} %{redirect_url}' -b "$TMP/k
 if grep -q 'password-new' "$TMP/kc-after"; then fail "kc_action=UPDATE_PASSWORD shows the change-password form"; fi
 [[ "$after" == 302\ http://localhost:5173/* ]] && ok "personas can't be changed through kc_action (straight back to the app)"   || fail "unexpected answer to the kc_action sign-in: $after"
 
+# The account console and its REST API are switched off (KC_FEATURES_DISABLED): a visitor with the public password
+# can't edit a shared persona there. The address shows the Assay error page instead.
+code="$(curl -s -o "$TMP/account" -w '%{http_code}' -H 'Accept: text/html' "$KC/realms/assay/account")"
+[ "$code" = 404 ] && grep -q 'Back to Assay' "$TMP/account" && ok "the account console is off (404, the Assay error page)"   || fail "the account console answers $code"
+code="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $(token jane.smith)" -H 'Accept: application/json'   "$KC/realms/assay/account/credentials")"
+[ "$code" = 404 ] && ok "the account API is off, even with a persona's token (404)" || fail "the account API answers $code"
+
 echo "All $pass checks passed."
