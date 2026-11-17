@@ -43,6 +43,9 @@ jobs:
           assert realm["realm"] == "assay", realm["realm"]
           assert not missing, f"missing personas: {missing}"
           assert all(c["publicClient"] for c in realm["clients"]), "the SPA client must be public (no secret)"
+          import os
+          assert realm.get("loginTheme") == "assay", "the realm must use the Assay login theme"
+          assert os.path.isfile("docker-compose/config/keycloak/themes/assay/login/theme.properties"), "the Assay theme is missing"
           print(f"realm {realm['realm']}: {len(users)} users, {len(realm['clients'])} client(s)")
           PY
 

@@ -1,0 +1,534 @@
+/*
+ * Assay login theme. Tokens are copied from fyp-grading-frontend/src/styles/globals.css (the design boards'
+ * `.t` and `.t.dark` blocks). Dark mode follows the OS through prefers-color-scheme: these pages sit outside
+ * the app, so they can't read the app's theme toggle.
+ */
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-sans-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+}
+
+:root {
+  --paper: #f6f5f1;
+  --surface: #ffffff;
+  --raised: #f1f0eb;
+  --line: #d9d6cc;
+  --line2: #b9b6ac;
+  --ink: #1b1f24;
+  --ink2: #3b424c;
+  --muted: #545b66;
+  --pri: #1f4e8c;
+  --pri-h: #163a69;
+  --on-pri: #ffffff;
+  --pri-soft: #eef3fa;
+  --amber: #94470c;
+  --amber-line: #c98a4b;
+  --amber-bg: #fff9f2;
+  --green: #1d6a4c;
+  --green-soft: #e3f1ea;
+  --banner: #1b1f24;
+  --banner-ink: #e7e9ec;
+  --banner-accent: #8db4ee;
+  --sel: #1f4e8c;
+  --logo: #1f3f70;
+  --shadow: 0 1px 2px rgba(27, 31, 36, 0.06);
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #111418;
+    --surface: #181c22;
+    --raised: #1f242b;
+    --line: #2e353f;
+    --line2: #4a525e;
+    --ink: #e7e9ec;
+    --ink2: #c9ced6;
+    --muted: #a3aab5;
+    --pri: #8db4ee;
+    --pri-h: #b5cff5;
+    --on-pri: #0e1620;
+    --pri-soft: #1c2a3d;
+    --amber: #f0a65e;
+    --amber-line: #a8702f;
+    --amber-bg: #221a10;
+    --green: #6fcb9f;
+    --green-soft: #11291f;
+    --banner: #0b0d10;
+    --sel: #8db4ee;
+    --logo: #8db4ee;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body.as-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--pri);
+}
+a:hover {
+  color: var(--pri-h);
+}
+:focus-visible {
+  outline: 3px solid var(--sel);
+  outline-offset: 2px;
+}
+#kc-page-title:focus {
+  outline: none;
+}
+::selection {
+  background: var(--pri-soft);
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.93em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Skip link: visible only when focused. */
+.as-skip {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 10;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--pri);
+  font-weight: 600;
+}
+.as-skip:focus {
+  top: 8px;
+}
+
+/* P2: the dark demo strip. */
+.as-demo {
+  background: var(--banner);
+  color: var(--banner-ink);
+  font-size: 14px;
+}
+.as-demo :focus-visible {
+  outline-color: var(--banner-accent);
+}
+.as-demo-inner {
+  margin: 0 auto;
+  max-width: 1360px;
+  min-height: 44px;
+  padding: 10px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.as-demo .as-ic {
+  color: var(--banner-accent);
+}
+.as-demo-sep {
+  color: #a3aab5;
+}
+
+/* Page frame */
+.as-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 48px;
+}
+.as-top {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 24px;
+}
+.as-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--logo);
+  text-decoration: none;
+  border-radius: 10px;
+}
+.as-wordmark b {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.as-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 28px 28px 24px;
+}
+.as-card h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.as-lede,
+.as-card .instruction {
+  margin: 0 0 20px;
+  color: var(--ink2);
+}
+.as-card .instruction + .instruction {
+  margin-top: -12px;
+}
+/* Keycloak's own wording under the plain explanation (error page). */
+.as-detail {
+  margin: -8px 0 20px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.as-card .as-actions {
+  margin: 0;
+}
+
+.as-foot {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Fields */
+.as-form {
+  margin: 0;
+}
+.as-field {
+  margin: 0 0 16px;
+}
+.as-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.as-input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px; /* 16 px stops iOS zooming into the field */
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.as-input:hover {
+  border-color: var(--muted);
+}
+.as-input:focus-visible {
+  outline: 3px solid var(--sel);
+  outline-offset: 2px;
+  border-color: var(--sel);
+}
+.as-input[aria-invalid='true'] {
+  border-color: var(--amber);
+}
+.as-input-group {
+  position: relative;
+}
+.as-input-group .as-input {
+  padding-right: 52px;
+}
+.as-reveal {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.as-reveal:hover {
+  color: var(--ink);
+}
+.as-help {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.as-field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.as-form-options {
+  margin: -4px 0 16px;
+  font-size: 14px;
+}
+
+/* Buttons */
+.as-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.as-btn-primary {
+  background: var(--pri);
+  color: var(--on-pri);
+}
+.as-btn-primary:hover {
+  background: var(--pri-h);
+  color: var(--on-pri);
+}
+.as-btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line2);
+}
+.as-btn-secondary:hover {
+  background: var(--raised);
+  color: var(--ink);
+}
+.as-btn-link {
+  padding: 0;
+  background: none;
+  color: var(--pri);
+  font-weight: 500;
+  text-decoration: underline;
+}
+.as-btn-block {
+  display: flex;
+  width: 100%;
+  margin-top: 8px;
+}
+.as-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.as-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Links that stand alone must still be 44 px targets. */
+.as-link,
+.as-card p > a:not(.as-btn) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 500;
+}
+
+/* The last paragraph of the error and info pages holds the "Back to Assay" button. */
+#kc-error-message p:last-child,
+#kc-info-message p:last-child {
+  margin-bottom: 0;
+}
+.as-form-options-wrap:empty,
+.clearfix {
+  display: none;
+}
+
+/* Signing in as … (pages after the username step) */
+.as-username {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+/* Alerts: amber, like the app's own (an icon and words, never colour alone). */
+.as-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--amber-line);
+  border-radius: 12px;
+  background: var(--amber-bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+.as-alert .as-ic {
+  flex: none;
+  margin-top: 1px;
+  color: var(--amber);
+}
+.as-alert-success,
+.as-alert-info {
+  border-color: var(--line);
+  background: var(--pri-soft);
+}
+.as-alert-success .as-ic {
+  color: var(--green);
+}
+.as-alert-info .as-ic {
+  color: var(--pri);
+}
+
+/* Icons: masks, so they take currentColor. Inline SVG, no icon font. */
+.as-ic {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: var(--i) center / contain no-repeat;
+  mask: var(--i) center / contain no-repeat;
+  vertical-align: -3px;
+  font-style: normal;
+}
+.as-ic-lock {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
+}
+.as-ic-eye {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+  width: 20px;
+  height: 20px;
+}
+.as-ic-eye-off {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.4 3.4M6.6 6.6A17.4 17.4 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3Cpath d='M3 3l18 18'/%3E%3C/svg%3E");
+  width: 20px;
+  height: 20px;
+}
+.as-ic-error,
+.as-ic-warn {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E");
+}
+.as-ic-ok {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E");
+}
+.as-ic-info {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 8h.01'/%3E%3C/svg%3E");
+}
+.as-ic-back {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 18l-6-6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Language links, only if the realm ever turns on more than one locale. */
+.as-locales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 12px;
+  font-size: 14px;
+}
+.as-locales a[aria-current='true'] {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 480px) {
+  .as-demo-sep {
+    display: none;
+  }
+  .as-page {
+    padding: 24px 16px 32px;
+  }
+  .as-card {
+    padding: 22px 18px 20px;
+  }
+  .as-top {
+    margin-bottom: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .as-ic {
+    background: CanvasText;
+  }
+  .as-btn-primary {
+    border-color: ButtonText;
+  }
+}

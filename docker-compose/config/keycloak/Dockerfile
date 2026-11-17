@@ -6,5 +6,7 @@ RUN /opt/keycloak/bin/kc.sh build
 FROM quay.io/keycloak/keycloak:26.8.2
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY import/ /opt/keycloak/data/import/
+# The Assay login theme (realm setting loginTheme=assay). Themes are read at start, so no rebuild step is needed.
+COPY themes/ /opt/keycloak/themes/
 # --import-realm skips a realm that already exists, so restarts keep their state.
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]

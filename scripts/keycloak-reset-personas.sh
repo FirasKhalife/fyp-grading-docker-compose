@@ -5,6 +5,7 @@
 #
 # - every required action disabled (no UPDATE_PASSWORD / CONFIGURE_TOTP / webauthn via kc_action),
 # - brute-force lockout off (it locks the persona for everyone, and the password is public),
+# - the Assay login theme,
 # - the assay-spa client redirects only to ASSAY_SPA_ORIGIN (default http://localhost:5173),
 # - personas missing from an older import are created with the export's fixed ids,
 # - each persona: password reset to the public demo password, no pending required actions, no OTP or other
@@ -28,13 +29,13 @@ kc() { docker exec "$CONTAINER" /opt/keycloak/bin/kcadm.sh "$@"; }
 
 kc config credentials --server http://localhost:8080 --realm master --user "$ADMIN_USER" --password "$ADMIN_PASSWORD" >/dev/null
 
-kc update "realms/$REALM" -s bruteForceProtected=false
+kc update "realms/$REALM" -s bruteForceProtected=false -s loginTheme=assay
 for alias in $(kc get authentication/required-actions -r "$REALM" --fields alias --format csv --noquotes); do
   kc update "authentication/required-actions/$alias" -r "$REALM" -s enabled=false -s defaultAction=false
 done
 client_id="$(kc get clients -r "$REALM" -q clientId=assay-spa --fields id --format csv --noquotes)"
-kc update "clients/$client_id" -r "$REALM" -s "redirectUris=[\"$SPA_ORIGIN/*\"]" -s 'webOrigins=["+"]'   -s "attributes.\"post.logout.redirect.uris\"=$SPA_ORIGIN/*"
-echo "realm $REALM: required actions disabled, brute-force lockout off, assay-spa redirects to $SPA_ORIGIN"
+kc update "clients/$client_id" -r "$REALM" -s "redirectUris=[\"$SPA_ORIGIN/*\"]" -s 'webOrigins=["+"]' -s baseUrl=/ -s "attributes.\"post.logout.redirect.uris\"=$SPA_ORIGIN/*"
+echo "realm $REALM: required actions disabled, brute-force lockout off, Assay login theme, assay-spa redirects to $SPA_ORIGIN"
 
 # Personas added to the realm export after this Keycloak was first imported (e.g. ahmad.fares) are created here,
 # with the export's fixed ids, which the demo seed uses. Existing users are skipped, not overwritten.

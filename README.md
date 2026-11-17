@@ -16,6 +16,7 @@ How the pieces fit together, and how a grade flows through them: [docs/architect
 | `docker-compose.sh` | Runs `docker compose` with every `docker-compose/docker-compose.*.yml` file |
 | `docker-compose/.env` | Non-secret settings (service names, URLs). Passwords here are local defaults only; real ones come from the environment |
 | `docker-compose/config/keycloak/` | The Keycloak image, and `import/assay-realm.json`: realm `assay`, roles `ADMIN` / `REVIEWER` / `STUDENT`, the eight demo personas, and the public `assay-spa` client |
+| `docker-compose/config/keycloak/themes/assay/` | The Assay login theme: Keycloak's sign-in, error and sign-out pages in the app's look, light and dark, with self-hosted IBM Plex fonts ([below](#the-login-theme)) |
 | `seed/` | The generator of the demo data each service loads into a visitor's private copy ([seed/README.md](seed/README.md)) |
 | `e2e/smoke.sh` | End-to-end smoke test of a running stack, through the gateway with real tokens |
 | `docs/` | Architecture |
@@ -55,6 +56,22 @@ the authorization code flow with PKCE.
 
 A realm import never updates an existing realm. On a Keycloak imported before a persona was added, run
 `scripts/keycloak-reset-personas.sh` once: it creates the missing personas with their fixed ids.
+
+## The login theme
+
+"Sign in with email" and the sign-out confirmation show Keycloak's own pages. The `assay` theme makes them look like
+the app: the "Private demo" strip, the wordmark, one card, the Assay colours in light and dark (from the visitor's
+system setting), 44 px targets and a 375 px layout.
+
+- It's a plain FreeMarker theme on Keycloak's `base` theme. It overrides the layout (`template.ftl`), the login,
+  error, info, page-expired and sign-out pages, and the English copy (`messages/messages_en.properties`). Every other page
+  still uses Keycloak's template with the theme's CSS classes.
+- The fonts are IBM Plex Sans and Mono (SIL Open Font License, `resources/fonts/OFL.txt`). The pages load nothing
+  from outside Keycloak.
+- The image copies it to `/opt/keycloak/themes/assay`, and the realm export sets `loginTheme: assay`. On a realm
+  imported before that, `scripts/keycloak-reset-personas.sh` sets it.
+- After a Keycloak upgrade, compare the six overridden `.ftl` files with the new `base/login` ones. Each says which
+  Keycloak version it follows.
 
 ## Smoke test
 

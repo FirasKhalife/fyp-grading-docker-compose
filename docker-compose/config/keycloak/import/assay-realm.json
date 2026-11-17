@@ -1,6 +1,7 @@
 {
   "realm": "assay",
   "displayName": "Assay",
+  "loginTheme": "assay",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
@@ -51,6 +52,7 @@
         "+"
       ],
       "rootUrl": "${ASSAY_SPA_ORIGIN:http://localhost:5173}",
+      "baseUrl": "/",
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "${ASSAY_SPA_ORIGIN:http://localhost:5173}/*"
