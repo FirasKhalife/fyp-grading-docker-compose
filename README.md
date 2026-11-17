@@ -42,6 +42,10 @@ The config server serves the local `../fyp-grading-config` checkout (`native` pr
 All of them share the password `assay-demo`. It's published on purpose: the accounts can't change anything outside
 the visitor's own demo copy.
 
+Keycloak's account console and account API are switched off in the image (`KC_FEATURES_DISABLED=account,account-api`),
+and every required action is off in the realm. So nobody can change a persona's password, 2FA or profile, and
+`/realms/assay/account` shows the Assay error page. The smoke test checks both.
+
 | Persona | Username | Roles |
 |---|---|---|
 | Coordinator | `rania.haddad` | ADMIN, REVIEWER |
@@ -70,6 +74,8 @@ system setting), 44 px targets and a 375 px layout.
   from outside Keycloak.
 - The image copies it to `/opt/keycloak/themes/assay`, and the realm export sets `loginTheme: assay`. On a realm
   imported before that, `scripts/keycloak-reset-personas.sh` sets it.
+- "Back to Assay" and the wordmark link to `ASSAY_SPA_ORIGIN` (default `http://localhost:5173`), so the link works
+  even on pages where Keycloak has no client to link back to.
 - After a Keycloak upgrade, compare the six overridden `.ftl` files with the new `base/login` ones. Each says which
   Keycloak version it follows.
 

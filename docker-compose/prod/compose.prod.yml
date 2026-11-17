@@ -59,7 +59,8 @@ services:
       # Used once to create the master admin; delete that user after first boot (docs/deploy-hardening.md).
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN_USER:?}
       - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:?}
-      # Replaces ${ASSAY_SPA_ORIGIN} in the realm export: the only redirect URI and web origin allowed.
+      # Replaces ${ASSAY_SPA_ORIGIN} in the realm export (the only redirect URI and web origin allowed), and is where
+      # the login theme's "Back to Assay" links go.
       - ASSAY_SPA_ORIGIN=${ASSAY_SPA_ORIGIN:?set ASSAY_SPA_ORIGIN, e.g. https://grading.example.dev}
 
   admin-service:

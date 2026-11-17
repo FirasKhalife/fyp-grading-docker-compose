@@ -10,8 +10,8 @@
             <#if traceId??>
                 <p class="as-detail" id="traceId">${msg("traceIdSupportMessage", traceId)}</p>
             </#if>
-            <#if !skipLink?? && client?? && client.baseUrl?has_content>
-                <p class="as-actions"><a id="backToApplication" class="as-btn as-btn-primary" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+            <#if !skipLink?? && appUrl?has_content>
+                <p class="as-actions"><a id="backToApplication" class="as-btn as-btn-primary" href="${appUrl}">${msg("backToApplication")}</a></p>
             </#if>
         </div>
     </#if>

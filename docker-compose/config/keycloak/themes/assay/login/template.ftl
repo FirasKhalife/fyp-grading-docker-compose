@@ -5,7 +5,9 @@
 <#import "footer.ftl" as loginFooter>
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <#assign pageHeading><#nested "header"></#assign>
-<#assign appUrl = (client.baseUrl)!"">
+<#-- Where "Back to Assay" goes: the app's origin (ASSAY_SPA_ORIGIN), so it works even when Keycloak has no client to
+     link back to (e.g. the switched-off account console). The app's own base URL is the fallback. -->
+<#global appUrl = properties.assayAppUrl!((client.baseUrl)!"")>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 <head>

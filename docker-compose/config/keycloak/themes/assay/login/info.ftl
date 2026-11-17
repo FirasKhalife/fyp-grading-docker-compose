@@ -22,8 +22,8 @@
                     <p class="as-actions"><a class="as-btn as-btn-primary" href="${pageRedirectUri}">${msg("backToApplication")}</a></p>
                 <#elseif actionUri?has_content>
                     <p class="as-actions"><a class="as-btn as-btn-primary" href="${actionUri}">${msg("proceedWithAction")}</a></p>
-                <#elseif (client.baseUrl)?has_content>
-                    <p class="as-actions"><a class="as-btn as-btn-primary" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                <#elseif appUrl?has_content>
+                    <p class="as-actions"><a class="as-btn as-btn-primary" href="${appUrl}">${msg("backToApplication")}</a></p>
                 </#if>
             </#if>
         </div>
