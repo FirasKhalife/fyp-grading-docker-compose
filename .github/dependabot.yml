@@ -1,0 +1,17 @@
+version: 2
+# Weekly updates for the pinned versions: the Keycloak image's base, the third-party images of the production compose
+# (pinned by version and digest) and the GitHub Actions (pinned by commit SHA).
+updates:
+  - package-ecosystem: docker
+    directory: /docker-compose/config/keycloak
+    schedule: {interval: weekly, day: monday}
+  - package-ecosystem: docker-compose
+    directory: /docker-compose/prod
+    schedule: {interval: weekly, day: monday}
+    groups:
+      images: {patterns: ["*"], update-types: [minor, patch]}
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly, day: monday}
+    groups:
+      actions: {patterns: ["*"]}

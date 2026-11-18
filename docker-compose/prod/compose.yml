@@ -1,0 +1,396 @@
+# Assay in production: one 8 GB host (Netcup VPS 1000) behind a Cloudflare Tunnel. Standalone, not an override of
+# the dev files: every service runs a published image (ghcr.io/firaskhalife/*), nothing is built here.
+#
+#   cd docker-compose/prod
+#   cp .env.example .env        # then fill in every secret (git-ignored)
+#   docker compose up -d --wait # add --profile tunnel to start cloudflared too
+#
+# - One way in: the edge (the frontend image's nginx, configured by edge.nginx.conf) serves the app and proxies /api to
+#   the gateway and only /realms/assay and /resources to Keycloak. It is published on 127.0.0.1 only, for cloudflared
+#   on the host and for checks over SSH; cloudflared in the `tunnel` profile reaches it as edge:8080. No other port is
+#   published, so Keycloak's admin console, the management ports and RabbitMQ are reachable only on the Docker network.
+# - Locked down: every container runs as a non-root user, with a read-only root filesystem (writable paths are small
+#   tmpfs mounts or the named volumes), no Linux capabilities and no privilege escalation.
+# - Memory: every container has a limit (table in docs/deploy-hardening.md). They add up to 5.4 GiB, which leaves
+#   about 2.5 GB of the 8 GB for the OS, Docker and the page cache. The JVMs size their heap from the limit.
+# - Third-party images are pinned to an exact version and digest (Dependabot proposes updates). Every secret comes from
+#   .env (see .env.example); a missing one stops `up`.
+name: assay
+
+x-base: &base
+  restart: unless-stopped
+  networks: [assay]
+  logging:
+    driver: json-file
+    options: {max-size: 10m, max-file: '3'}
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  tmpfs: ['/tmp:size=64m']
+
+# Heap from the container limit (40%), not a fixed -Xmx: metaspace, code cache, thread stacks and direct buffers live
+# outside the heap and take most of the rest. Serial GC and C1 only: the demo needs a small footprint, not throughput.
+# The images load their classes from an AOT cache made at build time, which these flags must stay compatible with.
+x-jvm-opts: &jvm-opts >-
+  -XX:MaxRAMPercentage=40 -XX:InitialRAMPercentage=10 -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k
+  -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError
+
+x-spring: &spring
+  <<: *base
+  healthcheck: &spring-health
+    test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:8080/actuator/health/readiness | grep -q UP']
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 120s   # a cold JVM on shared vCPUs; failures in this window don't count
+    start_interval: 3s
+
+x-spring-env: &spring-env
+  JDK_JAVA_OPTIONS: *jvm-opts
+  SPRING_PROFILES_ACTIVE: prod
+  BUILD_VERSION: ${ASSAY_TAG:-latest}
+  REGISTRY_SERVER_URL: http://registry-server:8761/eureka/
+  CONFIG_SERVER_URL: http://config-server:8071
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: '5672'
+  RABBITMQ_USERNAME: ${RABBITMQ_USER:?set RABBITMQ_USER in .env}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
+  AUTH_SERVER_URL: http://keycloak-server:8080/realms/assay
+  ADMIN_SERVICE_NAME: admin-service
+  EVALUATION_SERVICE_NAME: evaluation-service
+  NOTIFICATION_SERVICE_NAME: notification-service
+  RUBRIC_SERVICE_NAME: rubric-service
+  PORT: '8080'
+
+x-postgres: &postgres
+  <<: *base
+  image: postgres:16.16-alpine3.24@sha256:81e77a4833487b8132fe4b00bedd39dc3f74b8641e387f19312a48f7de218c2e
+  user: '70:70'   # postgres; a new volume takes its owner from the image, so no chown (and no root) is needed
+  tmpfs: ['/tmp:size=16m', '/var/run/postgresql:size=1m']
+  # Small buffers: each database holds a few MB of demo data per visitor copy.
+  command: [postgres, -c, shared_buffers=32MB, -c, max_connections=40, -c, work_mem=2MB]
+  healthcheck:
+    test: [CMD-SHELL, 'pg_isready -q -h 127.0.0.1 -d "$$POSTGRES_DB" -U "$$POSTGRES_USER"']
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+    start_interval: 2s
+  deploy: {resources: {limits: {memory: 160m}}}
+
+services:
+  # ---------------------------------------------------------------- data
+  admin-db:
+    <<: *postgres
+    environment: &pg-env
+      POSTGRES_DB: admin-db
+      POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes: [admin-db-data:/var/lib/postgresql/data]
+
+  notification-db:
+    <<: *postgres
+    environment: {<<: *pg-env, POSTGRES_DB: notification-db}
+    volumes: [notification-db-data:/var/lib/postgresql/data]
+
+  rubric-db:
+    <<: *postgres
+    environment: {<<: *pg-env, POSTGRES_DB: rubric-db}
+    volumes: [rubric-db-data:/var/lib/postgresql/data]
+
+  keycloak-db:
+    <<: *postgres
+    environment: {<<: *pg-env, POSTGRES_DB: keycloak-db}
+    volumes: [keycloak-db-data:/var/lib/postgresql/data]
+    deploy: {resources: {limits: {memory: 192m}}}
+
+  mongodb:
+    <<: *base
+    image: mongo:7.0.48@sha256:884c055bff8b7144ca44830d01826facd3083b33c4dea44b94a1476c62de3c32
+    user: '999:999'   # mongodb
+    # WiredTiger would otherwise size its cache from the host's RAM, not the container's limit.
+    command: [mongod, --wiredTigerCacheSizeGB, '0.25']
+    environment:
+      MONGO_INITDB_DATABASE: evaluation-db
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:?}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:?}
+    volumes: [mongodb-data:/data/db, mongodb-config:/data/configdb]
+    healthcheck:
+      test: [CMD, mongosh, --quiet, --norc, --eval, 'quit(db.adminCommand("ping").ok ? 0 : 1)']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+      start_interval: 3s
+    deploy: {resources: {limits: {memory: 512m}}}
+
+  rabbitmq:
+    <<: *base
+    image: rabbitmq:4.2.9-alpine@sha256:cd4f5c5bb4ffe530dba84770a8d139b8518470cdd385fec9cf014ebfff6bb009   # no management UI
+    user: '100:101'   # rabbitmq
+    hostname: rabbitmq   # the data directory is named after the node, so it must not change between runs
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?}
+    volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    healthcheck:
+      # Every check starts a small Erlang VM, so check rarely once it's up.
+      test: [CMD, rabbitmq-diagnostics, -q, check_port_connectivity]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    deploy: {resources: {limits: {memory: 256m}}}
+
+  redis:
+    <<: *base
+    image: redis:8.4.8-alpine@sha256:ff72f74e4f471df79ed920aa8bbc35efe72ff8a1f8acdc50aad5dbb9b14a4034
+    user: '999:1000'   # redis
+    # Only the gateway's rate-limit buckets: nothing worth persisting.
+    command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --save "" --appendonly no --maxmemory 48mb --maxmemory-policy allkeys-lru']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?}
+    tmpfs: ['/tmp:size=8m', '/data:size=8m']
+    healthcheck:
+      test: [CMD-SHELL, 'redis-cli ping | grep -q PONG']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+      start_interval: 2s
+    deploy: {resources: {limits: {memory: 64m}}}
+
+  # ---------------------------------------------------------------- identity
+  keycloak-server:
+    <<: *base
+    image: ghcr.io/firaskhalife/fyp-grading-keycloak:${ASSAY_TAG:-latest}
+    tmpfs: ['/tmp:size=64m', '/opt/keycloak/data/tmp:size=64m']
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak-db
+      KC_DB_USERNAME: ${DB_USER:?}
+      KC_DB_PASSWORD: ${DB_PASSWORD:?}
+      KC_DB_POOL_MAX_SIZE: '10'
+      # One public issuer for every token. The services fetch the keys over the Docker network
+      # (keycloak-server:8080), which the dynamic back channel allows.
+      KC_HOSTNAME: ${PUBLIC_URL:?set PUBLIC_URL in .env, e.g. https://assay.example.dev}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: 'true'
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_TRUSTED_ADDRESSES: 172.30.0.10   # the edge
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_PORT: '8080'
+      KC_CACHE: local
+      # Heap from the limit, as for the Spring services (Keycloak's default is 70%).
+      JAVA_OPTS_KC_HEAP: -XX:MaxRAMPercentage=45 -XX:InitialRAMPercentage=15
+      JAVA_OPTS_APPEND: -XX:+ExitOnOutOfMemoryError
+      # Creates the master admin on the first start only; replace it afterwards (docs/deploy-hardening.md).
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:?set KEYCLOAK_ADMIN_USER in .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      # Replaces ${ASSAY_SPA_ORIGIN} in the realm export (the only redirect URI and web origin of assay-spa), and is
+      # where the login theme's "Back to Assay" links go.
+      ASSAY_SPA_ORIGIN: ${PUBLIC_URL:?}
+    depends_on:
+      keycloak-db: {condition: service_healthy}
+    healthcheck:
+      # Ready means the assay realm answers: /health/ready is already UP while the first start is still importing
+      # the realm, and sign-ins get "503 Bootstrap in progress" for a few more seconds. The image has no curl, so
+      # this asks with bash's /dev/tcp.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8080 &&
+          printf 'GET /realms/assay/.well-known/openid-configuration HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          head -n 1 <&3 | grep -q ' 200 '
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+      start_interval: 3s
+    deploy: {resources: {limits: {memory: 768m}}}
+
+  # ---------------------------------------------------------------- Spring Cloud
+  registry-server:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-registry-server:${ASSAY_TAG:-latest}
+    environment:
+      JDK_JAVA_OPTIONS: *jvm-opts
+      SPRING_APPLICATION_NAME: registry-server
+      EUREKA_HOSTNAME: registry-server
+      BUILD_VERSION: ${ASSAY_TAG:-latest}
+      PORT: '8761'
+    healthcheck:
+      <<: *spring-health
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:8761/actuator/health/readiness | grep -q UP']
+    deploy: {resources: {limits: {memory: 320m}}}
+
+  config-server:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-config-server:${ASSAY_TAG:-latest}
+    environment:
+      JDK_JAVA_OPTIONS: *jvm-opts
+      SPRING_APPLICATION_NAME: config-server
+      SPRING_PROFILES_ACTIVE: git   # clones the public fyp-grading-config repository (into /tmp)
+      GIT_REPO_URI: ${CONFIG_GIT_URI:-https://github.com/FirasKhalife/fyp-grading-config.git}
+      GIT_BRANCH: ${CONFIG_GIT_BRANCH:-main}
+      REGISTRY_SERVER_URL: http://registry-server:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: '5672'
+      RABBITMQ_USERNAME: ${RABBITMQ_USER:?}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?}
+      BUILD_VERSION: ${ASSAY_TAG:-latest}
+      PORT: '8071'
+    depends_on:
+      registry-server: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    healthcheck:
+      <<: *spring-health
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:8071/actuator/health/readiness | grep -q UP']
+    deploy: {resources: {limits: {memory: 320m}}}
+
+  # ---------------------------------------------------------------- domain services
+  admin-service:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-admin-service:${ASSAY_TAG:-latest}
+    environment:
+      <<: *spring-env
+      SPRING_APPLICATION_NAME: admin-service
+      DATABASE_URL: jdbc:postgresql://admin-db:5432/admin-db
+      DATABASE_USERNAME: ${DB_USER:?}
+      DATABASE_PASSWORD: ${DB_PASSWORD:?}
+    depends_on:
+      config-server: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      admin-db: {condition: service_healthy}
+    deploy: {resources: {limits: {memory: 512m}}}
+
+  evaluation-service:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-evaluation-service:${ASSAY_TAG:-latest}
+    environment:
+      <<: *spring-env
+      SPRING_APPLICATION_NAME: evaluation-service
+      DATABASE_URL: mongodb://${DB_USER:?}:${DB_PASSWORD:?}@mongodb:27017/evaluation-db?authSource=admin
+    depends_on:
+      config-server: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      mongodb: {condition: service_healthy}
+    deploy: {resources: {limits: {memory: 448m}}}
+
+  notification-service:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-notification-service:${ASSAY_TAG:-latest}
+    environment:
+      <<: *spring-env
+      SPRING_APPLICATION_NAME: notification-service
+      DATABASE_URL: jdbc:postgresql://notification-db:5432/notification-db
+      DATABASE_USERNAME: ${DB_USER:?}
+      DATABASE_PASSWORD: ${DB_PASSWORD:?}
+    depends_on:
+      config-server: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      notification-db: {condition: service_healthy}
+    deploy: {resources: {limits: {memory: 512m}}}
+
+  rubric-service:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-rubric-service:${ASSAY_TAG:-latest}
+    environment:
+      <<: *spring-env
+      SPRING_APPLICATION_NAME: rubric-service
+      DATABASE_URL: jdbc:postgresql://rubric-db:5432/rubric-db
+      DATABASE_USERNAME: ${DB_USER:?}
+      DATABASE_PASSWORD: ${DB_PASSWORD:?}
+    depends_on:
+      config-server: {condition: service_healthy}
+      rubric-db: {condition: service_healthy}
+    deploy: {resources: {limits: {memory: 448m}}}
+
+  # ---------------------------------------------------------------- edge
+  api-gateway:
+    <<: *spring
+    image: ghcr.io/firaskhalife/fyp-grading-api-gateway:${ASSAY_TAG:-latest}
+    environment:
+      JDK_JAVA_OPTIONS: *jvm-opts
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_APPLICATION_NAME: api-gateway
+      BUILD_VERSION: ${ASSAY_TAG:-latest}
+      REGISTRY_SERVER_URL: http://registry-server:8761/eureka/
+      CONFIG_SERVER_URL: http://config-server:8071
+      AUTH_SERVER_URL: http://keycloak-server:8080/realms/assay
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?}
+      # The app is served from the same origin as the API, so this only matters to other origins: none allowed.
+      ALLOWED_ORIGINS: ${PUBLIC_URL:?}
+      # The edge's fixed address: the only peer whose CF-Connecting-IP (set by Cloudflare) the rate limiter believes.
+      TRUSTED_PROXIES: 172.30.0.10
+      # Demo copies one a minute per visitor; raise it only for a test run (see .env.example).
+      ASSAY_GATEWAY_HEAVYLIMIT_REPLENISHRATE: ${GATEWAY_COPY_RATE:-1}
+      PORT: '9191'
+    depends_on:
+      redis: {condition: service_healthy}
+      keycloak-server: {condition: service_healthy}
+      admin-service: {condition: service_healthy}
+      evaluation-service: {condition: service_healthy}
+      notification-service: {condition: service_healthy}
+      rubric-service: {condition: service_healthy}
+    healthcheck:
+      <<: *spring-health
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:9192/actuator/health/readiness | grep -q UP']
+    deploy: {resources: {limits: {memory: 448m}}}
+
+  edge:
+    <<: *base
+    image: ghcr.io/firaskhalife/fyp-grading-frontend:${ASSAY_TAG:-latest}
+    volumes: [./edge.nginx.conf:/etc/nginx/nginx.conf:ro]
+    tmpfs: ['/tmp:size=32m']
+    ports: ['127.0.0.1:${EDGE_PORT:-8080}:8080']
+    networks:
+      assay: {ipv4_address: 172.30.0.10}
+    depends_on:
+      api-gateway: {condition: service_healthy}
+      keycloak-server: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/healthz]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+      start_interval: 2s
+    deploy: {resources: {limits: {memory: 64m}}}
+
+  cloudflared:
+    <<: *base
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:2026.11.1@sha256:e613aadbc2d9511785d2e67a86b0c8ac18dd63a3f9af0d06faf04cbfdcb35f2d
+    # The tunnel's public hostname routes everything to http://edge:8080 (configured in the Cloudflare dashboard).
+    command: [tunnel, --no-autoupdate, --metrics, 0.0.0.0:2000, run]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      edge: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, cloudflared, tunnel, --metrics, 127.0.0.1:2000, ready]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy: {resources: {limits: {memory: 128m}}}
+
+networks:
+  assay:
+    name: assay
+    ipam:
+      # Containers get addresses from the upper half; the lower half is for fixed ones (the edge's 172.30.0.10), so
+      # a container that starts first can't take it.
+      config: [{subnet: 172.30.0.0/24, ip_range: 172.30.0.128/25}]
+
+volumes:
+  admin-db-data:
+  notification-db-data:
+  rubric-db-data:
+  keycloak-db-data:
+  mongodb-data:
+  mongodb-config:
+  rabbitmq-data:

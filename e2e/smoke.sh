@@ -5,11 +5,15 @@
 # brings the copy back to the seed.
 #
 # Usage: e2e/smoke.sh [gateway-url] [keycloak-url]     (defaults: http://localhost:9191 http://localhost:7080)
+#        APP_ORIGIN: the origin the SPA client may redirect to (default http://localhost:5173, the dev server).
+#        Against the production compose, all three are its edge: APP_ORIGIN=http://localhost:8080 e2e/smoke.sh \
+#        http://localhost:8080 http://localhost:8080
 # Needs: bash, curl, python3. Exits non-zero on the first failed check.
 set -euo pipefail
 
 GW="${1:-http://localhost:9191}"
 KC="${2:-http://localhost:7080}"
+APP="${APP_ORIGIN:-http://localhost:5173}"
 PASSWORD="${DEMO_PASSWORD:-assay-demo}"   # the public demo personas' password (see README)
 SESSION="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 TMP="$(mktemp -d)"
@@ -132,7 +136,7 @@ grep -q '^HTTP/[0-9.]* 429' $TMP/burst && grep -qi '^retry-after: [0-9]' $TMP/bu
 # Review C1: a visitor must not be able to trigger an application-initiated action (here: change the shared
 # persona's password) by adding kc_action to the sign-in URL. Signing in must go straight back to the app.
 auth="$KC/realms/assay/protocol/openid-connect/auth?client_id=assay-spa&response_type=code&scope=openid"
-auth="$auth&redirect_uri=http%3A%2F%2Flocalhost%3A5173%2F&code_challenge_method=S256"
+auth="$auth&redirect_uri=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1] + "/", safe=""))' "$APP")&code_challenge_method=S256"
 auth="$auth&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&kc_action=UPDATE_PASSWORD"
 form="$(curl -s -c "$TMP/kc-cookies" "$auth" | python3 -c '
 import html, re, sys
@@ -142,7 +146,7 @@ form="$KC/realms/${form#*/realms/}"   # the form names Keycloak's public hostnam
 [ -n "$form" ] || fail "Keycloak login form not found"
 after="$(curl -s -o "$TMP/kc-after" -w '%{http_code} %{redirect_url}' -b "$TMP/kc-cookies" -c "$TMP/kc-cookies"   --data-urlencode "username=jane.smith" --data-urlencode "password=$PASSWORD" "$form")"
 if grep -q 'password-new' "$TMP/kc-after"; then fail "kc_action=UPDATE_PASSWORD shows the change-password form"; fi
-[[ "$after" == 302\ http://localhost:5173/* ]] && ok "personas can't be changed through kc_action (straight back to the app)"   || fail "unexpected answer to the kc_action sign-in: $after"
+[[ "$after" == "302 $APP/"* ]] && ok "personas can't be changed through kc_action (straight back to the app)"   || fail "unexpected answer to the kc_action sign-in: $after"
 
 # The account console and its REST API are switched off (KC_FEATURES_DISABLED): a visitor with the public password
 # can't edit a shared persona there. The address shows the Assay error page instead.
