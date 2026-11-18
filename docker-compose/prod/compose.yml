@@ -64,7 +64,7 @@ x-spring-env: &spring-env
 
 x-postgres: &postgres
   <<: *base
-  image: postgres:16.16-alpine3.24@sha256:81e77a4833487b8132fe4b00bedd39dc3f74b8641e387f19312a48f7de218c2e
+  image: postgres:18.7-alpine3.24@sha256:b6972e1115a4ff8eba5d7f7d19184926d1e16d7d1136ae1e1a7ebf286da0f015
   user: '70:70'   # postgres; a new volume takes its owner from the image, so no chown (and no root) is needed
   tmpfs: ['/tmp:size=16m', '/var/run/postgresql:size=1m']
   # Small buffers: each database holds a few MB of demo data per visitor copy.
