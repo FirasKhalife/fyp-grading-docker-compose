@@ -19,9 +19,11 @@ How the pieces fit together, and how a grade flows through them: [docs/architect
 | `docker-compose/config/keycloak/themes/assay/` | The Assay login theme: Keycloak's sign-in, error and sign-out pages in the app's look, light and dark, with self-hosted IBM Plex fonts ([below](#the-login-theme)) |
 | `seed/` | The generator of the demo data each service loads into a visitor's private copy ([seed/README.md](seed/README.md)) |
 | `e2e/smoke.sh` | End-to-end smoke test of a running stack, through the gateway with real tokens |
-| `docs/` | Architecture |
+| `docker-compose/prod/` | Production: a standalone compose for one 8 GB host that pulls the published images, with memory limits, health checks, one edge (`edge.nginx.conf`) and secrets from a git-ignored `.env` ([docs/deploy-hardening.md](docs/deploy-hardening.md)) |
+| `docs/` | Architecture, and running it in production |
 
-The service repositories are expected next to this one (`../fyp-grading-admin-service`, and so on).
+The service repositories are expected next to this one (`../fyp-grading-admin-service`, and so on). The production
+compose needs none of them: it runs the images CI publishes to `ghcr.io/firaskhalife/`.
 
 ## Run
 
@@ -33,6 +35,10 @@ The service repositories are expected next to this one (`../fyp-grading-admin-se
 |---|---|
 | http://localhost:9191 | The API gateway (`/api/**`, `/swagger-ui.html`) |
 | http://localhost:7080 | Keycloak (realm `assay`) |
+
+For production, see [docs/deploy-hardening.md](docs/deploy-hardening.md): `cd docker-compose/prod`, copy
+`.env.example` to `.env` and fill it in, then `docker compose up -d --wait`. Everything is then on one origin,
+`http://localhost:8080` on the host.
 
 The config server serves the local `../fyp-grading-config` checkout (`native` profile). Set
 `CONFIG_SERVER_PROFILE=git` to read `GIT_REPO_URI` instead.
@@ -114,7 +120,11 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request:
 
 - ShellCheck on the scripts
 - validation of the compose files and the Keycloak realm
+- the production compose: every service has a memory limit, a health check and log rotation, only the edge
+  publishes a port, and the limits fit the 8 GB host
 - the seed generator's own checks
+- the Keycloak image build. From `master`, CI also pushes it to `ghcr.io/firaskhalife/fyp-grading-keycloak`
+  (`latest` and the short commit SHA)
 
 A manual and weekly job also checks out every service repo and runs `check-shared-code.sh`. It also confirms that
 the committed seeds are exactly what the generator produces.

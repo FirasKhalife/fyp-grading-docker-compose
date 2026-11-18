@@ -1,0 +1,17 @@
+# Accepted Trivy findings for the Keycloak image (CI: .github/workflows/ci.yml, job "keycloak-image").
+# CI fails on any HIGH or CRITICAL finding that has a fix. Only list here a finding that can't be fixed from this
+# repo yet, each with the reason and an expiry date ("exp:"), after which Trivy reports it again for review.
+# Last scan: 2026-11-18, quay.io/keycloak/keycloak:26.8.2 (the latest release).
+
+# Guava 33.6.0 inside Keycloak's own distribution (fixed in 33.7.2). It can only be fixed by a Keycloak release that
+# ships it; 26.8.2 is the newest. Review when Dependabot proposes the next Keycloak version.
+CVE-2026-102554 exp:2027-02-18
+
+# The base OS packages below have no fixed version yet in Red Hat's UBI 9 (Trivy shows them as unfixed, so the CI gate
+# already skips them). Listed so they're reviewed, not forgotten. sqlite-libs isn't used by Keycloak (it uses Postgres);
+# java-21-openjdk is the runtime, patched by Red Hat and picked up with the next Keycloak image.
+CVE-2026-119373 exp:2027-02-18
+CVE-2026-119374 exp:2027-02-18
+CVE-2026-119379 exp:2027-02-18
+CVE-2026-119586 exp:2027-02-18
+CVE-2026-91403 exp:2027-02-18

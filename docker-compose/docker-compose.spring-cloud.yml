@@ -14,7 +14,7 @@ services:
     expose:
       - 8761
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8761/actuator/health/readiness | grep UP || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1:8761/actuator/health/readiness | grep UP || exit 1" ]
     deploy:
       resources:
         limits:
@@ -47,7 +47,7 @@ services:
       registry-server:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1:8071/actuator/health/readiness | grep UP || exit 1" ]
     deploy:
       resources:
         limits:
@@ -88,7 +88,7 @@ services:
       rubric-service:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail --silent localhost:9192/actuator/health/readiness | grep UP || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1:9192/actuator/health/readiness | grep UP || exit 1" ]
     deploy:
       resources:
         limits:
