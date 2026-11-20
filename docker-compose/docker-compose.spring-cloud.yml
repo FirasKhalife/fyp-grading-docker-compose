@@ -63,6 +63,7 @@ services:
     container_name: ${API_GATEWAY_NAME}
     environment:
       - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
+      - AUTH_ISSUER_URI=${KEYCLOAK_PUBLIC_URL:-http://localhost:7080}/realms/assay
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}

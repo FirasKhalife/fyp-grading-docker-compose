@@ -58,6 +58,7 @@ x-spring-env: &spring-env
   RABBITMQ_USERNAME: ${RABBITMQ_USER:?set RABBITMQ_USER in .env}
   RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
   AUTH_SERVER_URL: http://keycloak-server:8080/realms/assay
+  AUTH_ISSUER_URI: ${PUBLIC_URL:?}/realms/assay   # only tokens Keycloak issued under its public URL
   ADMIN_SERVICE_NAME: admin-service
   EVALUATION_SERVICE_NAME: evaluation-service
   NOTIFICATION_SERVICE_NAME: notification-service
@@ -320,6 +321,7 @@ services:
       REGISTRY_SERVER_URL: http://registry-server:8761/eureka/
       CONFIG_SERVER_URL: http://config-server:8071
       AUTH_SERVER_URL: http://keycloak-server:8080/realms/assay
+      AUTH_ISSUER_URI: ${PUBLIC_URL:?}/realms/assay
       REDIS_HOST: redis
       REDIS_PORT: '6379'
       REDIS_PASSWORD: ${REDIS_PASSWORD:?}

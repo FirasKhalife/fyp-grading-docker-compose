@@ -11,6 +11,7 @@ services:
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
       - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
+      - AUTH_ISSUER_URI=${KEYCLOAK_PUBLIC_URL:-http://localhost:7080}/realms/assay
       - EVALUATION_SERVICE_NAME=${EVALUATION_SERVICE_NAME}
       - NOTIFICATION_SERVICE_NAME=${NOTIFICATION_SERVICE_NAME}
       - RUBRIC_SERVICE_NAME=${RUBRIC_SERVICE_NAME}
@@ -42,6 +43,7 @@ services:
     environment:
       - DATABASE_URL=mongodb://admin:admin@mongodb:27017/evaluation-db?authSource=admin
       - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
+      - AUTH_ISSUER_URI=${KEYCLOAK_PUBLIC_URL:-http://localhost:7080}/realms/assay
       - ADMIN_SERVICE_NAME=${ADMIN_SERVICE_NAME}
       - RUBRIC_SERVICE_NAME=${RUBRIC_SERVICE_NAME}
       - SPRING_APPLICATION_NAME=${EVALUATION_SERVICE_NAME}
@@ -74,6 +76,7 @@ services:
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
       - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
+      - AUTH_ISSUER_URI=${KEYCLOAK_PUBLIC_URL:-http://localhost:7080}/realms/assay
       - SPRING_APPLICATION_NAME=${NOTIFICATION_SERVICE_NAME}
       - BUILD_VERSION=1.0
       - PORT=8080
@@ -104,6 +107,7 @@ services:
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
       - AUTH_SERVER_URL=http://keycloak-server:8080/realms/assay
+      - AUTH_ISSUER_URI=${KEYCLOAK_PUBLIC_URL:-http://localhost:7080}/realms/assay
       - SPRING_APPLICATION_NAME=${RUBRIC_SERVICE_NAME}
       - BUILD_VERSION=1.0
       - PORT=8080
