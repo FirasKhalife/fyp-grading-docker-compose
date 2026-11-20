@@ -56,9 +56,11 @@ jobs:
               image = s.get("image", "")
               if not image.startswith("ghcr.io/firaskhalife/") and ("@sha256:" not in image or ":latest" in image):
                   problems.append(f"{name}: third-party image {image} isn't pinned to a version and digest")
-              # The derived third-party images built here carry their base's version as the tag.
+              # The derived third-party images built here carry their base's version as the tag, and a digest.
               for derived in ("postgres", "mongo"):
                   if image.startswith(f"ghcr.io/firaskhalife/fyp-grading-{derived}:"):
+                      if not re.search(r"@sha256:[0-9a-f]{64}$", image):
+                          problems.append(f"{name}: {image} isn't pinned to a digest")
                       base = re.search(r"^FROM [^:\s]+:([^@\s]+)", open(f"../config/{derived}/Dockerfile").read(), re.M)
                       if image.split(":")[1].split("@")[0] != base.group(1):
                           problems.append(f"{name}: {image} doesn't match config/{derived}/Dockerfile ({base.group(1)})")
@@ -255,7 +257,7 @@ jobs:
   # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks,
   # the security checks, the persona reset script and the frontend's Playwright real-stack suite against its edge on
   # http://localhost:8080. The services, the gateway and the frontend come from GHCR (latest); the three images this
-  # repo builds are built from this checkout first, so a pull request tests its own realm, theme and database images.
+  # repo builds are built from this checkout instead, so a pull request tests its own realm, theme and database images.
   # On pull requests and nightly (new service images land every day).
   integration:
     name: Production stack end to end
@@ -269,8 +271,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # The compose pins the published database images by digest, which a local build can't match: in this throwaway
+      # checkout, drop those two digests so the stack runs what this checkout's Dockerfiles build.
       - name: Build this repository's images (Keycloak, Postgres, MongoDB)
         run: |
+          sed -i -E 's#(ghcr\.io/firaskhalife/fyp-grading-(postgres|mongo):[^@[:space:]]+)@sha256:[0-9a-f]{64}#\1#' "$PROD/compose.yml"
           sed 's/=$/=ci-placeholder/' "$PROD/.env.example" > "$RUNNER_TEMP/prod.env"
           docker compose --project-directory "$PROD" -f "$PROD/compose.yml" --env-file "$RUNNER_TEMP/prod.env" \
             config --images | sort -u > "$RUNNER_TEMP/images"

@@ -66,7 +66,8 @@ x-spring-env: &spring-env
 
 x-postgres: &postgres
   <<: *base
-  image: ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24   # postgres:16.16-alpine3.24 without gosu
+  # postgres:16.16-alpine3.24 without gosu (config/postgres)
+  image: ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24@sha256:443ece9767376fde5a286a8591e056d1d858d2313f355681fbf754a7f3556989
   user: '70:70'   # postgres; a new volume takes its owner from the image, so no chown (and no root) is needed
   tmpfs: ['/tmp:size=16m', '/var/run/postgresql:size=1m']
   # Small buffers: each database holds a few MB of demo data per visitor copy.
@@ -108,7 +109,8 @@ services:
 
   mongodb:
     <<: *base
-    image: ghcr.io/firaskhalife/fyp-grading-mongo:7.0.48   # mongo:7.0.48 without gosu, js-yaml and the database tools
+    # mongo:7.0.48 without gosu, js-yaml and the database tools (config/mongo)
+    image: ghcr.io/firaskhalife/fyp-grading-mongo:7.0.48@sha256:4f410c943a76063bb852d72f508ed093f315ecf58e16939d9ea602b0cd7f9140
     user: '999:999'   # mongodb
     # WiredTiger would otherwise size its cache from the host's RAM, not the container's limit.
     command: [mongod, --wiredTigerCacheSizeGB, '0.25']
@@ -366,7 +368,7 @@ services:
     <<: *base
     profiles: [tunnel]
     image: cloudflare/cloudflared:2026.11.1@sha256:e613aadbc2d9511785d2e67a86b0c8ac18dd63a3f9af0d06faf04cbfdcb35f2d
-    # The tunnel's public hostname routes everything to http://edge:8080 (configured in the Cloudflare dashboard).
+    # The tunnel's public hostname routes everything to http://edge:8080 (set by OpenTofu in fyp-grading-iac/live/tofu).
     command: [tunnel, --no-autoupdate, --metrics, 0.0.0.0:2000, run]
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}

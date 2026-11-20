@@ -37,15 +37,12 @@ docker compose up -d --wait   # add --profile tunnel to run cloudflared in the s
   small `tmpfs` mounts or the named volumes), `cap_drop: [ALL]` and `no-new-privileges`. The databases start as their
   own users (`user:` in compose), so the root-to-user switch (`gosu`) isn't needed, and the derived database images
   don't have it.
-- **Pinned.** Third-party images are pinned to an exact version and digest (`redis:8.4.8-alpine@sha256:…`).
+- **Pinned.** Third-party images, and the derived database images, are pinned to an exact version and digest
+  (`redis:8.4.8-alpine@sha256:…`, `fyp-grading-postgres:16.16-alpine3.24@sha256:…`); CI fails on one that isn't.
   Dependabot (`docker-compose` ecosystem) proposes updates weekly, and bumps the derived images' bases within their
-  major version (a new major can't open the existing volumes without a migration).
-- **TODO: digest-pin the derived database images.** `fyp-grading-postgres` and `fyp-grading-mongo` are referenced by
-  tag only (`ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24`), because they have no digest until the
-  first `master` CI run publishes them. After that run: (1) make both GHCR packages public (GitHub > Packages >
-  Package settings > Change visibility), (2) add `@sha256:<digest>` to both `image:` lines in `prod/compose.yml`
-  (`docker buildx imagetools inspect <image:tag>` prints it), (3) extend CI's "Production compose is valid and
-  complete" check to require a digest on them too. Dependabot keeps the digests current from then on.
+  major version (a new major can't open the existing volumes without a migration). A derived image update is two
+  steps: Dependabot bumps the `FROM` in `config/postgres` or `config/mongo`, `master` CI publishes the new version
+  tag, and Dependabot then proposes its tag and digest for `prod/compose.yml`.
 
 ## 2. One way in: the edge
 
@@ -59,8 +56,8 @@ Cloudflare ── tunnel ── cloudflared ──► edge (nginx, 127.0.0.1:808
   Keycloak's sign-in pages share one origin (`PUBLIC_URL`): no CORS, and one public hostname in Cloudflare.
 - **Only the edge publishes a port**, and only on `127.0.0.1` (`EDGE_PORT`, default 8080): for cloudflared installed
   on the host, and for checks over SSH. Docker's port rules bypass ufw, so nothing binds to a public interface. With
-  `--profile tunnel`, cloudflared runs in the stack and reaches the edge as `edge:80`; route the tunnel's public
-  hostname to `http://edge:80` (or `http://localhost:8080` for a cloudflared on the host).
+  `--profile tunnel`, cloudflared runs in the stack and reaches the edge as `edge:8080`; route the tunnel's public
+  hostname to `http://edge:8080` (or `http://localhost:8080` for a cloudflared on the host).
 - **Never routed:** Keycloak's admin console and admin API (`/admin`), every other realm (`/realms/master`), the
   management ports, Eureka, the config server and the services' actuators. The edge answers those paths with a plain
   404. There is no RabbitMQ management UI in the image.
