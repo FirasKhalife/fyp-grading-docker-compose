@@ -2,7 +2,7 @@ name: ${PROJECT_NAME}
 
 services:
   admin-db:
-    image: postgres:16
+    image: postgres:16.16   # the production version (Debian, as the existing dev volumes were created with)
     container_name: admin-db
     ports:
       - '127.0.0.1:5432:5432'
@@ -19,7 +19,7 @@ services:
       service: database-service
 
   mongodb:
-    image: mongo:7
+    image: mongo:7.0.48   # the production version
     container_name: mongodb
     ports:
       - '127.0.0.1:27017:27017'
@@ -38,7 +38,7 @@ services:
       service: network-service
 
   notification-db:
-    image: postgres:16
+    image: postgres:16.16   # the production version (Debian, as the existing dev volumes were created with)
     container_name: notification-db
     ports:
       - '127.0.0.1:5434:5432'
@@ -55,7 +55,7 @@ services:
       service: database-service
 
   rubric-db:
-    image: postgres:16
+    image: postgres:16.16   # the production version (Debian, as the existing dev volumes were created with)
     container_name: rubric-db
     ports:
       - '127.0.0.1:5433:5432'

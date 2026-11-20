@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1'   # Mondays: the cross-repo consistency check
+    - cron: '0 3 * * *'   # nightly: the production stack end to end, from the latest published images
 
 permissions:
   contents: read
@@ -38,7 +39,7 @@ jobs:
           sed 's/=$/=ci-placeholder/' .env.example > "$RUNNER_TEMP/prod.env"
           docker compose --env-file "$RUNNER_TEMP/prod.env" --profile tunnel config --format json > "$RUNNER_TEMP/prod.json"
           python3 - "$RUNNER_TEMP/prod.json" <<'PY'
-          import json, sys
+          import json, re, sys
           services = json.load(open(sys.argv[1]))["services"]
           problems = []
           for name, s in services.items():
@@ -55,6 +56,12 @@ jobs:
               image = s.get("image", "")
               if not image.startswith("ghcr.io/firaskhalife/") and ("@sha256:" not in image or ":latest" in image):
                   problems.append(f"{name}: third-party image {image} isn't pinned to a version and digest")
+              # The derived third-party images built here carry their base's version as the tag.
+              for derived in ("postgres", "mongo"):
+                  if image.startswith(f"ghcr.io/firaskhalife/fyp-grading-{derived}:"):
+                      base = re.search(r"^FROM [^:\s]+:([^@\s]+)", open(f"../config/{derived}/Dockerfile").read(), re.M)
+                      if image.split(":")[1].split("@")[0] != base.group(1):
+                          problems.append(f"{name}: {image} doesn't match config/{derived}/Dockerfile ({base.group(1)})")
               if not s.get("read_only"):
                   problems.append(f"{name}: root filesystem isn't read-only")
               if s.get("cap_drop") != ["ALL"]:
@@ -74,6 +81,9 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.13'
+
+      - name: The API checks compile
+        run: python -m py_compile e2e/api-checks.py
 
       - name: Keycloak realm export is valid JSON with the five personas
         run: |
@@ -98,7 +108,7 @@ jobs:
   cross-repo:
     name: Service repos agree (shared code, fixtures, seeds)
     # Needs the service repos' default branches; run it by hand or weekly so it never blocks a pull request here.
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * 1'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -134,27 +144,48 @@ jobs:
             git -C "fyp-grading-$r" diff --exit-code -- src/main/resources/demo/seed.json
           done
 
-  # The Keycloak image (Assay realm, login theme, account console off): built on every run and scanned with Trivy. The full report goes to GitHub code scanning; the job fails
-  # on any HIGH or CRITICAL finding that has a fix (accepted unfixable ones are listed in .trivyignore). Only the
-  # default branch pushes it, to ghcr.io/firaskhalife/fyp-grading-keycloak with the tags latest and the short commit SHA, with an SBOM
-  # and build provenance attached, and signs it with cosign (keyless, GitHub OIDC). amd64 only: the demo host is
-  # amd64, and an arm64 build would run under emulation.
-  keycloak-image:
-    name: Keycloak image
+  # The images built here, each from docker-compose/config/<name>:
+  # - keycloak: the Assay realm, login theme, account console off. Tags: latest and the short commit SHA.
+  # - postgres, mongo: the official images minus gosu and unused tools (see their Dockerfiles). Tags: the upstream
+  #   version (the tag the production compose uses) and the short commit SHA.
+  # Built on every run and scanned with Trivy. The full report goes to GitHub code scanning; the job fails on any HIGH
+  # or CRITICAL finding that has a fix (accepted unfixable ones are listed in .trivyignore). Only the default branch
+  # pushes them, to ghcr.io/firaskhalife/fyp-grading-<name>, with an SBOM and build provenance attached, and signs them
+  # with cosign (keyless, GitHub OIDC). amd64 only: the demo host is amd64, and an arm64 build would run under emulation.
+  images:
+    name: ${{ matrix.title }} image
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: keycloak, title: Keycloak, sarif: image}
+          - {name: postgres, title: Postgres, sarif: image-postgres}
+          - {name: mongo, title: MongoDB, sarif: image-mongo}
     permissions:
       contents: read
       packages: write         # push to GHCR
       security-events: write  # upload the scan to code scanning
       id-token: write         # cosign keyless signing
     env:
-      IMAGE: ghcr.io/firaskhalife/fyp-grading-keycloak
+      IMAGE: ghcr.io/firaskhalife/fyp-grading-${{ matrix.name }}
+      CONTEXT: docker-compose/config/${{ matrix.name }}
       PUSH: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
       TRIVY: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Keycloak is published as latest; a derived image as its base's version (postgres:16.16-alpine3.24 becomes
+      # fyp-grading-postgres:16.16-alpine3.24).
+      - id: version
+        run: |
+          if [ "${{ matrix.name }}" = keycloak ]; then
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(sed -n 's/^FROM [^:[:space:]]*:\([^@[:space:]]*\).*/\1/p' "$CONTEXT/Dockerfile" | head -n 1)" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
@@ -163,18 +194,18 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=latest,enable=${{ env.PUSH }}
+            type=raw,value=${{ steps.version.outputs.tag }},enable=${{ env.PUSH }}
             type=sha,prefix=,format=short
 
       - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: docker-compose/config/keycloak
+          context: ${{ env.CONTEXT }}
           platforms: linux/amd64
           load: true
           tags: ${{ env.IMAGE }}:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=max
 
       - name: Scan (every finding, for code scanning)
         run: |
@@ -185,7 +216,7 @@ jobs:
         if: always() && hashFiles('trivy.sarif') != ''
         with:
           sarif_file: trivy.sarif
-          category: image
+          category: ${{ matrix.sarif }}
 
       - name: No fixable HIGH or CRITICAL vulnerabilities
         run: |
@@ -205,14 +236,14 @@ jobs:
         if: env.PUSH == 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: docker-compose/config/keycloak
+          context: ${{ env.CONTEXT }}
           platforms: linux/amd64
           push: true
           sbom: true
           provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: type=gha,scope=${{ matrix.name }}
 
       - if: env.PUSH == 'true'
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
@@ -220,3 +251,76 @@ jobs:
       - name: Sign (cosign keyless)
         if: env.PUSH == 'true'
         run: cosign sign --yes "$IMAGE@${{ steps.push.outputs.digest }}"
+
+  # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks
+  # and the security checks against its edge on http://localhost:8080. The services, the gateway and the frontend come
+  # from GHCR (latest); the three images this repo builds are built from this checkout first, so a pull request tests
+  # its own realm, theme and database images. On pull requests and nightly (new service images land every day).
+  integration:
+    name: Production stack end to end
+    needs: validate
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
+    runs-on: ubuntu-latest   # 4 vCPUs and 16 GB for public repositories; the stack's limits add up to 5.4 GiB
+    timeout-minutes: 45
+    env:
+      PROD: docker-compose/prod
+      EDGE: http://localhost:8080
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build this repository's images (Keycloak, Postgres, MongoDB)
+        run: |
+          sed 's/=$/=ci-placeholder/' "$PROD/.env.example" > "$RUNNER_TEMP/prod.env"
+          docker compose --project-directory "$PROD" -f "$PROD/compose.yml" --env-file "$RUNNER_TEMP/prod.env" \
+            config --images | sort -u > "$RUNNER_TEMP/images"
+          for name in keycloak postgres mongo; do
+            ref="$(grep -m 1 "^ghcr.io/firaskhalife/fyp-grading-$name:" "$RUNNER_TEMP/images")"
+            echo "building $ref"
+            docker build -q -t "$ref" "docker-compose/config/$name"
+          done
+
+      # GHCR answers "denied" to an anonymous pull of a package that is still private: say which ones and what to do.
+      - name: The published images can be pulled
+        run: |
+          denied=(); failed=()
+          while read -r ref; do
+            docker image inspect "$ref" >/dev/null 2>&1 && continue
+            if ! out="$(docker pull -q "$ref" 2>&1)"; then
+              if grep -qiE 'denied|unauthorized|not found|manifest unknown' <<<"$out"; then denied+=("$ref"); else failed+=("$ref: $out"); fi
+            fi
+          done < "$RUNNER_TEMP/images"
+          for ref in "${denied[@]}"; do
+            package="${ref#ghcr.io/firaskhalife/}"; package="${package%%[:@]*}"
+            echo "::error title=Image not public::$ref can't be pulled anonymously. If it is published, make the package public: github.com/FirasKhalife?tab=packages > $package > Package settings > Change visibility > Public."
+          done
+          for f in "${failed[@]}"; do echo "::error title=Pull failed::$f"; done
+          [ ${#denied[@]} -eq 0 ] && [ ${#failed[@]} -eq 0 ]
+
+      - name: Start the stack (./run-demo.sh)
+        run: ./run-demo.sh
+
+      - name: Smoke test
+        run: APP_ORIGIN="$EDGE" e2e/smoke.sh "$EDGE" "$EDGE"
+
+      - name: API rule checks
+        run: python3 e2e/api-checks.py "$EDGE" "$EDGE"
+
+      - name: Security checks
+        run: APP_ORIGIN="$EDGE" COMPOSE_PROJECT_NAME=assay e2e/security.sh "$EDGE" "$EDGE"
+
+      - name: Memory after the checks
+        if: always()
+        run: |
+          {
+            echo '### Memory after the checks'
+            echo
+            echo '| Container | Usage / limit |'
+            echo '| --- | --- |'
+            docker stats --no-stream --format '| {{.Name}} | {{.MemUsage}} |' | sort
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Container status and logs
+        if: failure()
+        run: |
+          ./run-demo.sh status || true
+          docker compose --project-directory "$PROD" -f "$PROD/compose.yml" logs --no-color --tail 150 || true

@@ -44,7 +44,7 @@ services:
       <<: *loki-dns
 
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.22.0
     container_name: alloy
     volumes:
       - ./config/grafana/alloy-local-config.yaml:/etc/alloy/config.alloy:ro
@@ -59,8 +59,11 @@ services:
       service: network-service
 
   minio:
-    image: minio/minio
+    # MinIO stopped publishing minio/minio (Docker Hub and quay.io). Chainguard's free build is published as latest
+    # only, so it is pinned by digest; -dev has the shell the entrypoint below needs.
+    image: chainguard/minio:latest-dev@sha256:9847741f83af2386200f45cf77f87850f4d56a10d178167ae963bde9fee77be2
     container_name: minio
+    user: '0:0'   # writes to the ./.data/minio bind mount, which belongs to the host user (dev only)
     entrypoint:
       - sh
       - -euc
@@ -78,7 +81,7 @@ services:
     volumes:
       - ./.data/minio:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9000/minio/health/live" ]
       interval: 15s
       timeout: 20s
       retries: 5
@@ -87,7 +90,7 @@ services:
       service: network-service
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.3.1
     container_name: grafana
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
@@ -128,7 +131,7 @@ services:
       service: network-service
 
   gateway:
-    image: nginx:latest
+    image: nginx:1.31.9
     container_name: grafana-nginx
     depends_on:
       - read

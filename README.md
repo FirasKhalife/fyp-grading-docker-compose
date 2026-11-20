@@ -48,7 +48,9 @@ to `ghcr.io/firaskhalife/`.
 | `docker-compose/config/keycloak/` | The Keycloak image, and `import/assay-realm.json`: realm `assay`, roles `ADMIN` / `REVIEWER` / `STUDENT`, the eight demo personas, and the public `assay-spa` client |
 | `docker-compose/config/keycloak/themes/assay/` | The Assay login theme: Keycloak's sign-in, error and sign-out pages in the app's look, light and dark, with self-hosted IBM Plex fonts ([below](#the-login-theme)) |
 | `seed/` | The generator of the demo data each service loads into a visitor's private copy ([seed/README.md](seed/README.md)) |
+| `docker-compose/config/postgres/`, `config/mongo/` | The production database images: the official ones minus `gosu` and unused tools |
 | `e2e/smoke.sh` | End-to-end smoke test of a running stack, through the gateway with real tokens |
+| `e2e/api-checks.py`, `e2e/security.sh` | The API rule checks and the security checks of a running stack ([below](#smoke-test-and-checks)) |
 | `docker-compose/prod/` | Production: a standalone compose for one 8 GB host that pulls the published images, with memory limits, health checks, one edge (`edge.nginx.conf`) and secrets from a git-ignored `.env` ([docs/deploy-hardening.md](docs/deploy-hardening.md)) |
 | `docs/` | Architecture, and running it in production |
 
@@ -116,11 +118,25 @@ system setting), 44 px targets and a 375 px layout.
 - After a Keycloak upgrade, compare the six overridden `.ftl` files with the new `base/login` ones. Each says which
   Keycloak version it follows.
 
-## Smoke test
+## Smoke test and checks
 
 ```bash
 e2e/smoke.sh                                   # gateway http://localhost:9191, Keycloak http://localhost:7080
+e2e/api-checks.py                              # the same defaults
+e2e/security.sh                                # the same defaults; needs docker on the stack's host
+
+# against the production compose (./run-demo.sh), all three through its edge:
+APP_ORIGIN=http://localhost:8080 e2e/smoke.sh http://localhost:8080 http://localhost:8080
+e2e/api-checks.py http://localhost:8080 http://localhost:8080
+APP_ORIGIN=http://localhost:8080 e2e/security.sh http://localhost:8080 http://localhost:8080
 ```
+
+`api-checks.py` (Python 3, standard library only) checks the rules through the API: copy isolation, the grade
+maths, late submissions, a submit racing an autosave, reviewer editing, release, what a reviewer sees before a grade
+is final, the CSV export, the schedule and rubric editors, and the session and rate-limit rules. `security.sh` checks
+that the shared personas can't be changed (`kc_action`, the account API) or locked out, that no datastore or console
+is reachable on the host's network address, and that the production compose publishes only the edge. CI runs all
+three against the production stack on every pull request and nightly.
 
 The script walks the demo's key moment:
 
@@ -154,8 +170,11 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request:
 - the production compose: every service has a memory limit, a health check and log rotation, only the edge
   publishes a port, and the limits fit the 8 GB host
 - the seed generator's own checks
-- the Keycloak image build. From `master`, CI also pushes it to `ghcr.io/firaskhalife/fyp-grading-keycloak`
-  (`latest` and the short commit SHA)
+- the Keycloak, Postgres and MongoDB image builds, each scanned with Trivy. From `master`, CI also pushes them to
+  `ghcr.io/firaskhalife/fyp-grading-{keycloak,postgres,mongo}` (Keycloak as `latest`, the databases as their
+  upstream version, all also as the short commit SHA), with an SBOM and provenance, signed with cosign
+- the production stack end to end (also nightly): `./run-demo.sh` from the published images, then the smoke test,
+  the API checks and the security checks against its edge
 
 A manual and weekly job also checks out every service repo and runs `check-shared-code.sh`. It also confirms that
 the committed seeds are exactly what the generator produces.

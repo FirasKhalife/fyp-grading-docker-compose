@@ -2,7 +2,7 @@ name: ${PROJECT_NAME}
 
 services:
   keycloak-db:
-    image: postgres:16
+    image: postgres:16.16   # the production version (Debian, as the existing dev volumes were created with)
     container_name: keycloak-db
     ports:
       - '127.0.0.1:5435:5432'
@@ -46,6 +46,20 @@ services:
     depends_on:
       keycloak-db:
         condition: service_healthy
+    healthcheck:
+      # The same check as production: ready means the assay realm answers (/health/ready is already UP while the
+      # first start is still importing the realm). The image has no curl, so this asks with bash's /dev/tcp.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8080 &&
+          printf 'GET /realms/assay/.well-known/openid-configuration HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          head -n 1 <&3 | grep -q ' 200 '
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+      start_interval: 3s
     extends:
       file: common.yml
       service: network-service
