@@ -252,16 +252,17 @@ jobs:
         if: env.PUSH == 'true'
         run: cosign sign --yes "$IMAGE@${{ steps.push.outputs.digest }}"
 
-  # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks
-  # and the security checks against its edge on http://localhost:8080. The services, the gateway and the frontend come
-  # from GHCR (latest); the three images this repo builds are built from this checkout first, so a pull request tests
-  # its own realm, theme and database images. On pull requests and nightly (new service images land every day).
+  # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks,
+  # the security checks, the persona reset script and the frontend's Playwright real-stack suite against its edge on
+  # http://localhost:8080. The services, the gateway and the frontend come from GHCR (latest); the three images this
+  # repo builds are built from this checkout first, so a pull request tests its own realm, theme and database images.
+  # On pull requests and nightly (new service images land every day).
   integration:
     name: Production stack end to end
     needs: validate
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
     runs-on: ubuntu-latest   # 4 vCPUs and 16 GB for public repositories; the stack's limits add up to 5.4 GiB
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PROD: docker-compose/prod
       EDGE: http://localhost:8080
@@ -307,6 +308,45 @@ jobs:
 
       - name: Security checks
         run: APP_ORIGIN="$EDGE" COMPOSE_PROJECT_NAME=assay e2e/security.sh "$EDGE" "$EDGE"
+
+      # The host's nightly cron runs it; here it must work on the read-only container with its defaults.
+      - name: The persona reset script works on the production Keycloak
+        run: scripts/keycloak-reset-personas.sh
+
+      # The frontend's own end-to-end suite in a real browser against this stack's edge (fyp-grading-frontend master,
+      # playwright.real.config.ts). Every test makes its own demo copy, so the gateway's copy limit is lifted first:
+      # the checks above ran with the production limit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {repository: FirasKhalife/fyp-grading-frontend, ref: master, path: frontend}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Playwright and Chromium
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Lift the demo-copy limit for Playwright
+        run: |
+          echo 'GATEWAY_COPY_RATE=600' >> "$PROD/.env"
+          docker compose --project-directory "$PROD" -f "$PROD/compose.yml" up -d --wait --wait-timeout 300 api-gateway
+
+      - name: Playwright real-stack suite
+        working-directory: frontend
+        env:
+          ASSAY_BASE_URL: ${{ env.EDGE }}
+          PW_CHANNEL: chromium   # Playwright's own Chromium, installed above
+        run: npx playwright test -c playwright.real.config.ts
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure() && hashFiles('frontend/playwright-report/**') != ''
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
 
       - name: Memory after the checks
         if: always()
