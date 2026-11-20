@@ -40,6 +40,12 @@ docker compose up -d --wait   # add --profile tunnel to run cloudflared in the s
 - **Pinned.** Third-party images are pinned to an exact version and digest (`redis:8.4.8-alpine@sha256:…`).
   Dependabot (`docker-compose` ecosystem) proposes updates weekly, and bumps the derived images' bases within their
   major version (a new major can't open the existing volumes without a migration).
+- **TODO: digest-pin the derived database images.** `fyp-grading-postgres` and `fyp-grading-mongo` are referenced by
+  tag only (`ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24`), because they have no digest until the
+  first `master` CI run publishes them. After that run: (1) make both GHCR packages public (GitHub > Packages >
+  Package settings > Change visibility), (2) add `@sha256:<digest>` to both `image:` lines in `prod/compose.yml`
+  (`docker buildx imagetools inspect <image:tag>` prints it), (3) extend CI's "Production compose is valid and
+  complete" check to require a digest on them too. Dependabot keeps the digests current from then on.
 
 ## 2. One way in: the edge
 
@@ -73,10 +79,12 @@ Cloudflare ── tunnel ── cloudflared ──► edge (nginx, 127.0.0.1:808
 
    The admin console isn't published. Administer through `docker exec` and `kcadm.sh`, as the script below does.
 3. **Every deploy that changes the realm, and nightly (cron):** run
-   `ASSAY_SPA_ORIGIN=https://… scripts/keycloak-reset-personas.sh assay-keycloak-server-1`. A realm import never
-   updates an existing realm, so this script applies the realm settings to the running Keycloak. Its admin login
-   defaults to `admin/admin`, so in production also set `KEYCLOAK_ADMIN_USER` / `KEYCLOAK_ADMIN_PASSWORD` to the
-   permanent admin. It:
+   `scripts/keycloak-reset-personas.sh` (it finds the running `keycloak-server` container, e.g.
+   `assay-keycloak-server-1`; or pass its name). A realm import never updates an existing realm, so this script
+   applies the realm settings to the running Keycloak. Its admin login defaults to the container's bootstrap admin,
+   so once that is replaced (step 2) set `KEYCLOAK_ADMIN_USER` / `KEYCLOAK_ADMIN_PASSWORD` to the permanent admin.
+   The SPA origin defaults to the container's `ASSAY_SPA_ORIGIN` (the `PUBLIC_URL`). kcadm.sh keeps its session in
+   `/tmp` (the container's root is read-only). CI runs it against the production stack on every pull request. It:
    - disables every required action, so visitors can't trigger a password change or 2FA setup on a shared persona
      through `kc_action`
    - turns brute-force lockout off
