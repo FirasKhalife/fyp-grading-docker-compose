@@ -1,0 +1,1834 @@
+# Assay API contract (OpenAPI 3.1)
+#
+# One spec for every endpoint the Assay screens need, across the four domain services behind the gateway.
+# The frontend builds against MSW mocks of this file; the backend implements it. Paths and shapes are
+# stable once published: any later change is recorded in the changelog below, with the date and the reason.
+#
+# CHANGELOG
+# - 1.0.0 (2026-11-15): first published version.
+# - 1.0.1 (2026-11-15): wording only, no shape change. PUT /api/rubrics/{assessment}: the "already submitted"
+#   warning comes from the overview's submittedCount (the description wrongly named a submittedEvaluations field).
+# - 1.1.0 (2026-11-15): additive. `submittedLate` (boolean, required) on Evaluation, ReviewerProgress and MyTask:
+#   true when submitted after the due date. Late submissions are allowed and stay marked (brief 4.4); `overdue`
+#   keeps meaning "not submitted and past due".
+# - 1.2.0 (2026-11-16): additive (plan 3.4 audit trail and 3.5 insights).
+#   - GET /api/activity takes an optional `teamId`: one team's history (draft changes, submissions, finals,
+#     releases, schedule and assignment changes). Releasing now writes one feed line per released team.
+#   - `disagreement` (boolean, required) on TeamAssessment and OverviewCell: the reviewers' scores are more than
+#     the threshold apart (15 points). Informational only; the grade is always the plain average.
+#   - `insights` (required) on Overview: the threshold, the final-grade distribution in 10-point bands, and the
+#     list of disagreements, largest first.
+#   - `updatedBy` ({id, displayName} or null) on Rubric: who last saved it.
+# - 1.3.0 (2026-11-16): fixes from the backend review. One behaviour change (reset); the rest documents what the
+#   services now answer.
+#   - POST /api/demo/session/reset returns a NEW copy id in `id`. The SPA must store it and send it as
+#     `X-Demo-Session` from then on; the old id answers 404 `demo-session-not-found`. (Reusing the id let a
+#     request in flight write into the fresh copy.)
+#   - Every data endpoint can answer 404 `demo-session-not-found` (from the gateway) when the copy no longer
+#     exists, e.g. after the midnight purge. PUT /api/demo/session then creates a new one.
+#   - 429 `rate-limited` always carries `Retry-After` (seconds). Creating or resetting a copy: one a minute, ten
+#     in a burst.
+#   - `submittedLate` is stored when the grade is handed in, not recomputed, so moving a due date later doesn't
+#     change it.
+#   - PUT /api/teams/{teamId}/reviewers: `assignments` takes up to 10 items (more than 5 reviewers is a 422
+#     `composition-invalid`, not a 400), and the 422 is now listed. 409 `assessment-final` when the change would
+#     alter the reviewers of an assessment whose team grade is already final.
+#   - GET /api/rubrics/{assessment}: 400 for an unknown assessment code. PUT: `weight` is a required whole number
+#     (33.5 or null is a 400).
+#   - GET and PUT /api/my-evaluations/..., GET /api/evaluations: 503 when admin-service or rubric-service is down.
+#   - PUT /api/my-evaluations/...: 409 `evaluation-submitting` while a submit is in progress. Submit: the team
+#     grade is computed during the call (no longer asynchronous); 409 `assessment-final`, `evaluation-changed`
+#     (the draft kept changing; retry) or `rubric-changed` (the rubric lost a criterion the draft uses).
+#   - GET /api/evaluations: a reviewer sees the list only if they hold that assessment's role on the team.
+#   - PATCH /api/teams/{teamId}: an empty `description` clears it; null or absent leaves it unchanged. A blank
+#     `name` or `projectTitle` is a 400; an empty body is a 400 `validation-failed`.
+#   - New problem codes: `assessment-final`, `grade-mismatch` (internal), `evaluation-submitting`,
+#     `evaluation-changed`, `rubric-changed`, `rubric-empty`, `demo-capacity` (503: too many copies today),
+#     `demo-copy-in-progress` (503: the copy is still being created; retry), `too-many-streams` (503, live
+#     stream), `concurrent-change` (409: two saves collided; retry), `not-your-session` (internal).
+# - 1.4.0 (2026-11-17): additive. A second student persona, so visitors can see the student view before results
+#   are released.
+#   - GET /api/demo/personas lists five personas. The new one is Ahmad Fares (`ahmad.fares`, Team Beta, key
+#     `student-waiting`): only the proposal and progress report are released for Beta in the seed. Nour Khoury
+#     (Team Alpha, key `student`) keeps every result released and the final grade.
+#   - `student-waiting` is added to the `Persona.key` and `Me.personaKey` enums.
+#   - 409 `student-is-demo-persona` now covers both student personas.
+#
+# Conventions (apply to every operation unless it says otherwise)
+# - Base URL: the gateway, e.g. http://localhost:9191. Every path starts with /api.
+# - Auth: `Authorization: Bearer <access token>` from Keycloak realm `assay`. Identity (who is grading, which
+#   student) always comes from the token, never from a body or path parameter.
+# - Demo isolation: every data request carries `X-Demo-Session: <uuid v4>`. The browser generates it once and keeps
+#   it in localStorage. All reads and writes are scoped to that visitor's private copy of the demo data.
+#   Missing or malformed header -> 400 `demo-session-required`. Exceptions: GET /api/demo/personas (public).
+#   A copy that no longer exists (purged at midnight, or replaced by a reset) -> 404 `demo-session-not-found` on
+#   every data endpoint; call PUT /api/demo/session to get a new one.
+# - Errors: RFC 9457 problem details (`application/problem+json`), see `Problem`. `code` is the stable,
+#   machine-readable field; `detail` is a plain sentence that can be shown to the user.
+# - Times: date-times are ISO-8601 instants in UTC (`2026-06-10T07:00:00Z`). Display them in `Europe/Paris`.
+#   Seed dates are relative: they're computed when the visitor's demo copy is created, so "today" is always the
+#   middle defense day. Never hard-code a date in the UI.
+# - Scores: numbers on 0-100, rounded to one decimal by the server. Levels are integers 0-4.
+# - Ids: UUIDs. Assessment codes are the enum `AssessmentCode`, used as-is in paths and bodies.
+# - Paged lists: `?page=0&size=20`, response `{content: [...], page: {size, number, totalElements, totalPages}}`.
+# - Creates return 201 with a `Location` header. Deletes return 204.
+# - Rate limits (gateway, per client IP): 429 `rate-limited` with `Retry-After` (seconds). Creating or resetting a
+#   demo copy is limited more tightly than reads: one a minute, ten in a burst.
+openapi: 3.1.0
+info:
+  title: Assay API
+  version: 1.4.0
+  summary: Final-year-project grading against shared rubrics, with several reviewers per team.
+  description: |
+    Served by four Spring services behind one gateway:
+    - **admin-service**: identity (`/me`), demo copies, assessments and due dates, teams, students, reviewer
+      assignment, defense schedule, aggregated grades, release, the coordinator overview.
+    - **evaluation-service**: each reviewer's filled-in rubric (draft, then submitted and locked).
+    - **rubric-service**: criteria, weights and level descriptions per assessment.
+    - **notification-service**: personal notifications, the coordinator activity feed, and the live stream (SSE).
+
+    Grade maths (from the product brief, section 4.2):
+    - Reviewer score = Σ(level × criterion weight %) ÷ 4, on 0-100. While drafting, the same sum over the scored
+      criteria only ("53.8 so far").
+    - Team assessment grade = plain average of the reviewers holding that assessment's role on the team, once all
+      of them have submitted.
+    - Team final grade = Σ(team assessment grade × assessment weight %), once all five are final (the progress
+      report weighs 0% but is required).
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:9191
+    description: Local gateway (docker compose)
+security:
+  - bearer: []
+tags:
+  - name: Demo
+  - name: Me
+  - name: Assessments
+  - name: Teams
+  - name: People
+  - name: Schedule
+  - name: Overview
+  - name: Student
+  - name: Evaluations
+  - name: Rubrics
+  - name: Notifications
+
+paths:
+  # ---------------------------------------------------------------- Demo (admin-service)
+  /api/demo/personas:
+    get:
+      tags: [Demo]
+      operationId: listPersonas
+      summary: The five demo personas shown on the landing page (two of them students)
+      description: |
+        Public: no token and no demo session needed.
+        One-click sign-in: the SPA requests a token from Keycloak (realm `assay`, public client `assay-spa`) with
+        `grant_type=password`, `username` from this list and the shared demo password from the SPA's config
+        (`VITE_DEMO_PASSWORD`, value `assay-demo`, published in the README: these accounts are public by design).
+        "Sign in with email" uses the authorization code flow with PKCE on the same client, with `login_hint`.
+      security: []
+      parameters: []
+      responses:
+        '200':
+          description: Personas, in display order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Persona'}
+              example:
+                - {key: coordinator, username: rania.haddad, displayName: Rania Haddad, roleLabel: Coordinator, roles: [ADMIN, REVIEWER], tryThings: [Release the advisor assessment results, Fix the defense conflict on day 3, Open Team Beta's reviewer spread]}
+                - {key: jury, username: jane.smith, displayName: Jane Smith, roleLabel: Jury member, roles: [REVIEWER], tryThings: [Finish the Team Beta final report draft, Grade Team Epsilon's final presentation]}
+                - {key: advisor, username: karim.nassar, displayName: Karim Nassar, roleLabel: Advisor, roles: [REVIEWER], tryThings: [Submit the overdue advisor assessment for Team Delta]}
+                - {key: student, username: nour.khoury, displayName: Nour Khoury, roleLabel: Student, roles: [STUDENT], tryThings: [Read the jury's comments on your final presentation]}
+                - {key: student-waiting, username: ahmad.fares, displayName: Ahmad Fares, roleLabel: Student, roles: [STUDENT], tryThings: [See what a student sees before results are released]}
+
+  /api/demo/session:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Demo]
+      operationId: getDemoSession
+      summary: The visitor's demo copy, if it exists
+      description: Call on app start. 404 `demo-session-not-found` means it was never created or was purged at midnight; show the "your demo was reset" state and call PUT.
+      responses:
+        '200':
+          description: The copy exists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DemoSession'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    put:
+      tags: [Demo]
+      operationId: ensureDemoSession
+      summary: Create the visitor's private copy of the seed data (idempotent)
+      description: |
+        Called after the persona sign-in. Clones the seed into every service, tagged with the session id, and
+        turns the relative seed dates into real ones (defense day 2 = today in Europe/Paris). Takes a few seconds.
+        If the copy already exists it's returned unchanged (200). Switching persona keeps the same copy.
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location: {$ref: '#/components/headers/Location'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DemoSession'}
+        '200':
+          description: Already existed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DemoSession'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+
+  /api/demo/session/reset:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    post:
+      tags: [Demo]
+      operationId: resetDemoSession
+      summary: '"Reset my demo": delete this copy and create a fresh one under a NEW id'
+      description: |
+        The response's `id` is the new demo session id: store it and send it as `X-Demo-Session` from now on.
+        The old id is deleted and answers 404 `demo-session-not-found`.
+      responses:
+        '200':
+          description: The fresh copy
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DemoSession'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+
+  # ---------------------------------------------------------------- Me (admin-service)
+  /api/me:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: Who is signed in, and which screens they get
+      responses:
+        '200':
+          description: The current user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Me'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/me/assignments:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Me]
+      operationId: getMyAssignments
+      summary: 'P3 My teams: what I must grade, and by when'
+      description: Reviewers only (role REVIEWER; includes the coordinator when she sits on a jury). Teams are ordered by the earliest open due date, finished teams last.
+      responses:
+        '200':
+          description: My teams and my assessments on each
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MyAssignments'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/me/team:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Student]
+      operationId: getMyTeam
+      summary: 'P11 Student home: my team, the timeline, released grades'
+      description: Students only. Grades appear per assessment once released; the final grade only once all five are released.
+      responses:
+        '200':
+          description: The student's team
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StudentHome'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/me/team/results/{assessment}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/Assessment'
+    get:
+      tags: [Student]
+      operationId: getMyTeamResults
+      summary: Released results for one assessment, with per-criterion levels and reviewer comments
+      responses:
+        '200':
+          description: The released results
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReleasedResults'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404':
+          description: '`results-not-released`: not released yet ("Results will appear here once the coordinator releases them.")'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+
+  # ---------------------------------------------------------------- Assessments (admin-service)
+  /api/assessments:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Assessments]
+      operationId: listAssessments
+      summary: The five assessments, with weight, owning role, due date and release counts
+      description: Any signed-in role.
+      responses:
+        '200':
+          description: In checkpoint order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Assessment'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/assessments/{assessment}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/Assessment'
+    patch:
+      tags: [Assessments]
+      operationId: updateAssessment
+      summary: Set the due date (P9, admin)
+      description: The due date is the same for all teams. Changing it never blocks grading; it only moves the overdue flag. Reviewers with pending evaluations are notified.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AssessmentPatch'}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Assessment'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/assessments/{assessment}/release:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/Assessment'
+    post:
+      tags: [Assessments]
+      operationId: releaseAssessment
+      summary: Release one assessment's results to students (P5, admin)
+      description: |
+        Releases the assessment for every team whose grade for it is final and not yet released. Teams that aren't
+        final are skipped and can be released later by calling this again. Each released team's students get a
+        notification. Releasing is permanent.
+        409 `nothing-to-release` when no team is final-and-unreleased.
+      responses:
+        '200':
+          description: What was released
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReleaseResult'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  # ---------------------------------------------------------------- Overview (admin-service)
+  /api/overview:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Overview]
+      operationId: getOverview
+      summary: 'P5 Coordinator overview: KPIs and the team × assessment grid'
+      description: Admin only.
+      responses:
+        '200':
+          description: The whole session at a glance
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overview'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/overview/export:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Overview]
+      operationId: exportOverview
+      summary: The grid as CSV (admin)
+      description: 'Columns: team, project title, one column per assessment (grade or empty), final grade, final state.'
+      responses:
+        '200':
+          description: 'CSV file, sent with `Content-Disposition: attachment; filename="assay-results.csv"`'
+          content:
+            text/csv:
+              schema: {type: string}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  # ---------------------------------------------------------------- Teams and people (admin-service)
+  /api/teams:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Teams]
+      operationId: listTeams
+      summary: Team list (P8, admin)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Teams by name
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TeamSummaryPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Teams]
+      operationId: createTeam
+      summary: Create a team (admin)
+      description: A new team has no reviewers yet, so its `composition` lists the problems until reviewers are assigned. 409 `team-name-taken`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamCreate'}
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location: {$ref: '#/components/headers/Location'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Team'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /api/teams/{teamId}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [Teams]
+      operationId: getTeam
+      summary: 'P6 Team detail: students, reviewers, slot, and every assessment with each reviewer''s status'
+      description: |
+        Admin: any team. Reviewer: teams they're assigned to (same shape; other reviewers' scores are included only
+        once the team assessment is final). Per-criterion levels and comments come from
+        `GET /api/evaluations?teamId=&assessment=`.
+      responses:
+        '200':
+          description: The team
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Team'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Teams]
+      operationId: updateTeam
+      summary: Rename or edit a team (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamPatch'}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Team'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Teams]
+      operationId: deleteTeam
+      summary: Delete a team (admin)
+      description: 409 `team-has-submissions` once any evaluation was submitted for it (submissions are permanent).
+      responses:
+        '204': {description: Deleted}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /api/teams/{teamId}/students:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [People]
+      operationId: listTeamStudents
+      summary: Students of a team (admin)
+      responses:
+        '200':
+          description: By last name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Student'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [People]
+      operationId: addTeamStudent
+      summary: Add a student to a team (admin)
+      description: 409 `student-email-taken` if the email is already on a team in this demo copy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentCreate'}
+      responses:
+        '201':
+          description: Added
+          headers:
+            Location: {$ref: '#/components/headers/Location'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Student'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /api/teams/{teamId}/students/{studentId}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+      - name: studentId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    patch:
+      tags: [People]
+      operationId: updateTeamStudent
+      summary: Edit a student, or move them to another team with `teamId` (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StudentPatch'}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Student'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [People]
+      operationId: removeTeamStudent
+      summary: Remove a student (admin)
+      description: 409 `student-is-demo-persona` for Nour Khoury and Ahmad Fares, so each student persona always has a team.
+      responses:
+        '204': {description: Removed}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /api/teams/{teamId}/reviewers:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+    get:
+      tags: [People]
+      operationId: listTeamReviewers
+      summary: Reviewers on a team, with their role (admin, or a reviewer on that team)
+      responses:
+        '200':
+          description: Advisors first, then jury, by last name
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TeamReviewers'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [People]
+      operationId: replaceTeamReviewers
+      summary: Assign reviewers and roles (3.1, admin). Replaces the whole set
+      description: |
+        The resulting set must satisfy the composition rules (brief 4.3): 1 to 5 reviewers in total, at least one
+        JURY and at least one ADVISOR, one role per reviewer. Otherwise 422 `composition-invalid` with the
+        `problems` list. Removing a reviewer, or changing their role, after they submitted an evaluation for this
+        team is refused with 409 `reviewer-has-submissions`. Once an assessment's team grade is final, a change
+        that would alter that assessment's reviewers is refused with 409 `assessment-final`. Added reviewers and
+        changed roles are notified.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TeamReviewersPut'}
+      responses:
+        '200':
+          description: The new set
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TeamReviewers'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/CompositionInvalid'}
+
+  /api/teams/{teamId}/defense-slot:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+    put:
+      tags: [Schedule]
+      operationId: setDefenseSlot
+      summary: Schedule or move a team's defense (P9, admin)
+      description: |
+        Allowed even when it creates a conflict (one reviewer in two defenses at once): the response lists the
+        conflicts so the UI can show the banner. The jury, the students and the coordinator are notified.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DefenseSlotPut'}
+      responses:
+        '200':
+          description: The slot, with any conflicts it's part of
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DefenseSlot'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Schedule]
+      operationId: clearDefenseSlot
+      summary: Unschedule a team's defense (admin)
+      responses:
+        '204': {description: Cleared}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/reviewers:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [People]
+      operationId: listReviewers
+      summary: All faculty who can be assigned (admin)
+      description: Reviewers are the faculty accounts; they aren't created from the UI.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: By last name
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReviewerPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  # ---------------------------------------------------------------- Schedule (admin-service)
+  /api/schedule:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Schedule]
+      operationId: getSchedule
+      summary: 'P9 Schedule: defense slots, due dates and conflicts, filtered by role'
+      description: Admin sees every slot; a reviewer sees the defenses of teams they're on; a student sees their own team's slot. Due dates are always all five.
+      responses:
+        '200':
+          description: The schedule
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Schedule'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  # ---------------------------------------------------------------- Evaluations (evaluation-service)
+  /api/my-evaluations/{teamId}/{assessment}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+      - $ref: '#/components/parameters/Assessment'
+    get:
+      tags: [Evaluations]
+      operationId: getMyEvaluation
+      summary: 'P4: my evaluation for this team and assessment, or a blank form'
+      description: |
+        The reviewer is the token's subject. 403 `not-assigned` unless they hold this assessment's role on the team.
+        If nothing was saved yet the response is a blank form built from the current rubric, with `id: null` and
+        `status: NOT_STARTED`. Once a draft exists, its criteria are a snapshot: later rubric edits don't change it.
+      responses:
+        '200':
+          description: The evaluation or a blank form
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Evaluation'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+    put:
+      tags: [Evaluations]
+      operationId: saveMyEvaluationDraft
+      summary: Save the draft (autosave). Creates it on first save
+      description: |
+        Send the full state of the form: every criterion with its level (or null) and comment. Idempotent, safe to
+        call on every change (debounce it). 409 `evaluation-submitted` once submitted, 409 `evaluation-submitting`
+        while a submit is being handed over, 409 `rubric-changed` if a criterion is no longer in the rubric.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EvaluationDraft'}
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Evaluation'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+
+  /api/my-evaluations/{teamId}/{assessment}/submit:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/TeamId'
+      - $ref: '#/components/parameters/Assessment'
+    post:
+      tags: [Evaluations]
+      operationId: submitMyEvaluation
+      summary: Submit and lock the evaluation
+      description: |
+        Optionally carries the final form state (same body as the draft save) so the last edits and the submit are
+        one call. Every criterion must have a level, otherwise 422 `criteria-unscored` with the missing criterion
+        ids in `errors`. The score is computed by the server. Submitting is permanent (no reopening, by anyone) and
+        is safe to retry: a second submit of an already-submitted evaluation returns it unchanged (200).
+        While the grade is handed over the evaluation is frozen (autosaves get 409 `evaluation-submitting`), so the
+        stored levels always match the score. The team grade and final grade are computed during the call; the
+        notifications follow asynchronously. 409 `assessment-final` if the team grade is already final,
+        `evaluation-changed` if the draft kept changing during the submit (retry).
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EvaluationDraft'}
+      responses:
+        '200':
+          description: Submitted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Evaluation'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/CriteriaUnscored'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+
+  /api/evaluations:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Evaluations]
+      operationId: listEvaluations
+      summary: 'Evaluations for one team and assessment, with levels and comments (P6, admin)'
+      description: Admin sees drafts and submitted ones. A reviewer who holds this assessment's role on the team sees submitted ones only, once the team assessment is final; anyone else gets 403.
+      parameters:
+        - name: teamId
+          in: query
+          required: true
+          schema: {type: string, format: uuid}
+        - name: assessment
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/AssessmentCode'}
+      responses:
+        '200':
+          description: One per reviewer who started
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Evaluation'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+
+  /api/evaluations/{evaluationId}/history:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - name: evaluationId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      tags: [Evaluations]
+      operationId: getEvaluationHistory
+      summary: 'Draft audit trail ("Jane changed Problem formulation 2 → 3"), newest first (P6, admin)'
+      responses:
+        '200':
+          description: Every level change, comment change and the submit
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/EvaluationHistoryEntry'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  # ---------------------------------------------------------------- Rubrics (rubric-service)
+  /api/rubrics:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Rubrics]
+      operationId: listRubrics
+      summary: 'P7: all five rubrics with criteria, weights and level descriptions (every role)'
+      responses:
+        '200':
+          description: In checkpoint order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Rubric'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/rubrics/{assessment}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - $ref: '#/components/parameters/Assessment'
+    get:
+      tags: [Rubrics]
+      operationId: getRubric
+      summary: One assessment's rubric (every role)
+      responses:
+        '200':
+          description: The rubric
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Rubric'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Rubrics]
+      operationId: replaceRubric
+      summary: 'Save the edited rubric (P7 editor, admin). Replaces the criteria list, in order'
+      description: |
+        Weights must add up to exactly 100, otherwise 422 `weights-not-100` (the editor shows the live total).
+        Criteria keep their `id` when sent with one; criteria without an id are new; missing ones are removed.
+        1-20 criteria, names up to 300 characters, a description for each of levels 1-4.
+        Evaluations already started keep their own snapshot, so editing never changes a submitted score.
+        For the "evaluations were already submitted" warning, use the `submittedCount` of this assessment's
+        cells in `GET /api/overview`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RubricPut'}
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Rubric'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+
+  # ---------------------------------------------------------------- Notifications (notification-service)
+  /api/notifications:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: 'P10: my notifications, newest first, with the unread count'
+      parameters:
+        - name: unread
+          in: query
+          description: Only unread ones
+          schema: {type: boolean, default: false}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: A page of my notifications
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NotificationPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/notifications/{notificationId}:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+      - name: notificationId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    patch:
+      tags: [Notifications]
+      operationId: updateNotification
+      summary: Mark one of my notifications read or unread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [read]
+              properties:
+                read: {type: boolean}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Notification'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/notifications/read-all:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    post:
+      tags: [Notifications]
+      operationId: markAllNotificationsRead
+      summary: Mark all my notifications read
+      responses:
+        '204': {description: Done}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/notifications/stream:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Notifications]
+      operationId: streamNotifications
+      summary: 'Live stream (Server-Sent Events): my new notifications, and for admins the activity feed'
+      description: |
+        `EventSource` can't send headers, so open it with a fetch-based client (e.g. `@microsoft/fetch-event-source`)
+        that sends `Authorization` and `X-Demo-Session`. Events:
+        - `event: notification`, `data:` a `Notification` JSON, `id:` its id.
+        - `event: activity` (admins only), `data:` an `ActivityEntry` JSON, `id:` its id.
+        - `event: unread-count`, `data: {"unreadCount": 3}` after any change to my read state.
+        - a `:keepalive` comment every 25 s.
+        The server closes the stream after 30 minutes; reconnect, then refetch the lists to catch up.
+      responses:
+        '200':
+          description: An open event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: notification
+                id: 5d0c8f8e-3f52-4f0a-9b8e-1b1f1d1e2a10
+                data: {"id":"5d0c8f8e-3f52-4f0a-9b8e-1b1f1d1e2a10","type":"GRADE_FINAL","text":"Final report for Team Beta is final: 74.6.","createdAt":"2026-06-10T10:15:00Z","read":false,"link":{"kind":"TEAM","teamId":"8b0d...","assessment":"FINAL_REPORT"}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/activity:
+    parameters:
+      - $ref: '#/components/parameters/DemoSession'
+    get:
+      tags: [Notifications]
+      operationId: listActivity
+      summary: 'P5 activity feed, or one team''s history with `teamId`: what happened, newest first (admin)'
+      parameters:
+        - name: teamId
+          in: query
+          description: Only this team's history (plan 3.4)
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: A page of activity
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ActivityPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Keycloak realm `assay`, client `assay-spa`. Realm roles in `realm_access.roles` are ADMIN, REVIEWER, STUDENT.'
+
+  headers:
+    Location:
+      description: URL of the created resource
+      schema: {type: string, format: uri-reference}
+
+  parameters:
+    DemoSession:
+      name: X-Demo-Session
+      in: header
+      required: true
+      description: The visitor's demo session id (UUID v4, generated by the browser and kept in localStorage).
+      schema: {type: string, format: uuid}
+    Assessment:
+      name: assessment
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/AssessmentCode'}
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 0, default: 0}
+    Size:
+      name: size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+
+  responses:
+    BadRequest:
+      description: '`validation-failed` (with `errors`), `demo-session-required`, or a malformed request'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unauthorized:
+      description: '`unauthenticated`: no token, or it expired. Sign in again.'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Forbidden:
+      description: '`forbidden` (wrong role) or `not-assigned` (not a reviewer with this role on this team)'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    NotFound:
+      description: '`not-found`, `demo-session-not-found`'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Conflict:
+      description: 'A business rule refused the change; `code` says which (e.g. `evaluation-submitted`, `evaluation-submitting`, `assessment-final`, `team-name-taken`, `reviewer-has-submissions`, `nothing-to-release`, `concurrent-change`)'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unprocessable:
+      description: '`weights-not-100` or another semantic validation failure'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    CompositionInvalid:
+      description: '`composition-invalid`: the reviewer set breaks the team composition rules'
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Problem'
+              - type: object
+                properties:
+                  problems:
+                    type: array
+                    items: {$ref: '#/components/schemas/CompositionProblem'}
+    CriteriaUnscored:
+      description: '`criteria-unscored`: `errors[].field` is `criteria[<criterionId>].level`'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    TooManyRequests:
+      description: '`rate-limited`. Wait for `Retry-After` seconds.'
+      headers:
+        Retry-After:
+          schema: {type: integer}
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unavailable:
+      description: '`service-unavailable`: a service behind the gateway is starting or down ("The demo is starting up, try again in a minute"). Also `demo-capacity` (too many demo copies today), `demo-copy-in-progress` (the copy is still being created; retry) and `too-many-streams` (live stream).'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+
+  schemas:
+    # ------------------------------------------------------------ enums and small types
+    AssessmentCode:
+      type: string
+      enum: [PROPOSAL_PRESENTATION, PROGRESS_REPORT, ADVISOR_ASSESSMENT, FINAL_REPORT, FINAL_PRESENTATION]
+    ReviewerRole:
+      type: string
+      description: A reviewer's role on one team
+      enum: [JURY, ADVISOR]
+    UserRole:
+      type: string
+      description: Realm role. JURY/ADVISOR are per team, not here. A coordinator who also grades has ADMIN and REVIEWER.
+      enum: [ADMIN, REVIEWER, STUDENT]
+    Level:
+      type: integer
+      minimum: 0
+      maximum: 4
+      description: 4 Exemplary, 3 Accomplished, 2 Developing, 1 Beginning, 0 Not demonstrated
+    Score:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: 0-100, one decimal
+      examples: [86.7]
+    EvaluationStatus:
+      type: string
+      description: NOT_STARTED means nothing saved yet. SUBMITTED is locked for good.
+      enum: [NOT_STARTED, DRAFT, SUBMITTED]
+    TeamAssessmentState:
+      type: string
+      description: |
+        NOT_STARTED: no reviewer submitted. WAITING: some submitted ("2 of 3"). FINAL: all submitted, grade computed.
+        RELEASED: final and visible to the team's students.
+      enum: [NOT_STARTED, WAITING, FINAL, RELEASED]
+    FinalState:
+      type: string
+      description: IN_PROGRESS until all five assessments are final; COMPUTED once the final grade exists; VISIBLE once all five are also released.
+      enum: [IN_PROGRESS, COMPUTED, VISIBLE]
+    Page:
+      type: object
+      required: [size, number, totalElements, totalPages]
+      properties:
+        size: {type: integer}
+        number: {type: integer}
+        totalElements: {type: integer}
+        totalPages: {type: integer}
+
+    Problem:
+      type: object
+      description: RFC 9457 problem details
+      required: [type, title, status, code]
+      properties:
+        type: {type: string, format: uri, examples: ['https://assay.dev/problems/validation-failed']}
+        title: {type: string, examples: [Validation failed]}
+        status: {type: integer, examples: [400]}
+        detail: {type: string, examples: [Weights must add up to 100%. They add up to 95%.]}
+        instance: {type: string, examples: ['/api/rubrics/PROPOSAL_PRESENTATION']}
+        code: {type: string, examples: [weights-not-100]}
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: {type: string, examples: ['criteria[2].weight']}
+              message: {type: string, examples: [must be between 0 and 100]}
+
+    # ------------------------------------------------------------ demo and identity
+    Persona:
+      type: object
+      required: [key, username, displayName, roleLabel, roles, tryThings]
+      properties:
+        key: {type: string, enum: [coordinator, jury, advisor, student, student-waiting]}
+        username: {type: string, description: Keycloak username}
+        displayName: {type: string}
+        roleLabel: {type: string}
+        roles: {type: array, items: {$ref: '#/components/schemas/UserRole'}}
+        tryThings: {type: array, items: {type: string}, description: 2-3 short suggestions for the card}
+    DemoSession:
+      type: object
+      required: [id, createdAt, resetsAt, today, timeZone]
+      properties:
+        id: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
+        resetsAt: {type: string, format: date-time, description: The next midnight in Europe/Paris, when every copy is deleted}
+        today: {type: string, format: date, description: '"Today" in this copy: defense day 2. Defense days are today-1, today, today+1.'}
+        timeZone: {type: string, examples: [Europe/Paris]}
+    Me:
+      type: object
+      required: [id, firstName, lastName, displayName, initials, email, roles]
+      properties:
+        id: {type: string, format: uuid, description: The Keycloak subject}
+        firstName: {type: string}
+        lastName: {type: string}
+        displayName: {type: string}
+        initials: {type: string, examples: [JS]}
+        email: {type: string, format: email}
+        roles: {type: array, items: {$ref: '#/components/schemas/UserRole'}}
+        personaKey: {type: [string, 'null'], enum: [coordinator, jury, advisor, student, student-waiting, null]}
+        studentTeamId: {type: [string, 'null'], format: uuid, description: Set for students}
+
+    # ------------------------------------------------------------ people
+    Person:
+      type: object
+      required: [id, firstName, lastName, displayName, initials]
+      properties:
+        id: {type: string, format: uuid}
+        firstName: {type: string}
+        lastName: {type: string}
+        displayName: {type: string}
+        initials: {type: string}
+        email: {type: string, format: email}
+    Reviewer:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          required: [coordinator, teamCount]
+          properties:
+            coordinator: {type: boolean, description: Also has the ADMIN role}
+            teamCount: {type: integer}
+    ReviewerPage:
+      type: object
+      required: [content, page]
+      properties:
+        content: {type: array, items: {$ref: '#/components/schemas/Reviewer'}}
+        page: {$ref: '#/components/schemas/Page'}
+    Student:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          required: [teamId]
+          properties:
+            teamId: {type: string, format: uuid}
+    StudentCreate:
+      type: object
+      required: [firstName, lastName, email]
+      properties:
+        firstName: {type: string, minLength: 1, maxLength: 80}
+        lastName: {type: string, minLength: 1, maxLength: 80}
+        email: {type: string, format: email, maxLength: 200}
+    StudentPatch:
+      type: object
+      minProperties: 1
+      properties:
+        firstName: {type: string, minLength: 1, maxLength: 80}
+        lastName: {type: string, minLength: 1, maxLength: 80}
+        email: {type: string, format: email, maxLength: 200}
+        teamId: {type: string, format: uuid, description: Move the student to this team}
+    TeamReviewer:
+      type: object
+      required: [reviewer, role]
+      properties:
+        reviewer: {$ref: '#/components/schemas/Person'}
+        role: {$ref: '#/components/schemas/ReviewerRole'}
+    TeamReviewers:
+      type: object
+      required: [reviewers, composition]
+      properties:
+        reviewers: {type: array, items: {$ref: '#/components/schemas/TeamReviewer'}}
+        composition: {$ref: '#/components/schemas/Composition'}
+    TeamReviewersPut:
+      type: object
+      required: [assignments]
+      properties:
+        assignments:
+          type: array
+          maxItems: 10
+          description: More than 5 is accepted here and refused by the composition rules (422).
+          items:
+            type: object
+            required: [reviewerId, role]
+            properties:
+              reviewerId: {type: string, format: uuid}
+              role: {$ref: '#/components/schemas/ReviewerRole'}
+    Composition:
+      type: object
+      description: 'For the inline rule line, e.g. "4 of 5 reviewers · needs at least 1 jury member"'
+      required: [valid, reviewerCount, maxReviewers, juryCount, advisorCount, problems]
+      properties:
+        valid: {type: boolean}
+        reviewerCount: {type: integer}
+        maxReviewers: {type: integer, const: 5}
+        juryCount: {type: integer}
+        advisorCount: {type: integer}
+        problems: {type: array, items: {$ref: '#/components/schemas/CompositionProblem'}}
+    CompositionProblem:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string, enum: [NO_REVIEWERS, TOO_MANY_REVIEWERS, NO_JURY, NO_ADVISOR, DUPLICATE_REVIEWER, UNKNOWN_REVIEWER]}
+        message: {type: string, examples: [Needs at least 1 jury member.]}
+
+    # ------------------------------------------------------------ assessments, release
+    Assessment:
+      type: object
+      required: [code, name, shortName, position, weight, reviewerRole, dueAt, finalTeamCount, releasedTeamCount, teamCount]
+      properties:
+        code: {$ref: '#/components/schemas/AssessmentCode'}
+        name: {type: string, examples: [Proposal presentation]}
+        shortName: {type: string, examples: [Proposal]}
+        position: {type: integer, minimum: 1, maximum: 5}
+        weight: {type: integer, description: 'Weight in the final grade, in %: 15/0/25/30/30.'}
+        required: {type: boolean, description: Always true; the progress report weighs 0% but is required}
+        reviewerRole: {$ref: '#/components/schemas/ReviewerRole'}
+        dueAt: {type: string, format: date-time}
+        teamCount: {type: integer}
+        finalTeamCount: {type: integer, description: Teams whose grade is final (released or not)}
+        releasedTeamCount: {type: integer}
+    AssessmentPatch:
+      type: object
+      required: [dueAt]
+      properties:
+        dueAt: {type: string, format: date-time}
+    ReleaseResult:
+      type: object
+      required: [assessment, releasedAt, releasedTeamIds, alreadyReleasedTeamIds, notFinalTeamIds]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        releasedAt: {type: string, format: date-time}
+        releasedTeamIds: {type: array, items: {type: string, format: uuid}}
+        alreadyReleasedTeamIds: {type: array, items: {type: string, format: uuid}}
+        notFinalTeamIds: {type: array, items: {type: string, format: uuid}}
+
+    # ------------------------------------------------------------ teams and grades
+    TeamRef:
+      type: object
+      required: [id, name, projectTitle]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, examples: [Beta]}
+        projectTitle: {type: string}
+    TeamCreate:
+      type: object
+      required: [name, projectTitle]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 60}
+        projectTitle: {type: string, minLength: 1, maxLength: 200}
+        description: {type: [string, 'null'], maxLength: 2000}
+    TeamPatch:
+      type: object
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 60}
+        projectTitle: {type: string, minLength: 1, maxLength: 200}
+        description: {type: [string, 'null'], maxLength: 2000, description: 'An empty string clears it; null or absent leaves it unchanged.'}
+    TeamSummary:
+      allOf:
+        - $ref: '#/components/schemas/TeamRef'
+        - type: object
+          required: [studentCount, composition, finalState]
+          properties:
+            studentCount: {type: integer}
+            composition: {$ref: '#/components/schemas/Composition'}
+            finalGrade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+            finalState: {$ref: '#/components/schemas/FinalState'}
+    TeamSummaryPage:
+      type: object
+      required: [content, page]
+      properties:
+        content: {type: array, items: {$ref: '#/components/schemas/TeamSummary'}}
+        page: {$ref: '#/components/schemas/Page'}
+    Team:
+      allOf:
+        - $ref: '#/components/schemas/TeamRef'
+        - type: object
+          required: [students, reviewers, composition, assessments, finalState]
+          properties:
+            description: {type: [string, 'null']}
+            students: {type: array, items: {$ref: '#/components/schemas/Student'}}
+            reviewers: {type: array, items: {$ref: '#/components/schemas/TeamReviewer'}}
+            composition: {$ref: '#/components/schemas/Composition'}
+            defenseSlot: {oneOf: [{$ref: '#/components/schemas/DefenseSlot'}, {type: 'null'}]}
+            assessments: {type: array, items: {$ref: '#/components/schemas/TeamAssessment'}}
+            finalGrade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+            finalState: {$ref: '#/components/schemas/FinalState'}
+    TeamAssessment:
+      type: object
+      description: One team on one assessment, with each expected reviewer
+      required: [assessment, weight, reviewerRole, dueAt, state, submittedCount, expectedCount, disagreement, overdue, reviewers]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        weight: {type: integer}
+        reviewerRole: {$ref: '#/components/schemas/ReviewerRole'}
+        dueAt: {type: string, format: date-time}
+        state: {$ref: '#/components/schemas/TeamAssessmentState'}
+        grade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: Set from FINAL on}
+        submittedCount: {type: integer}
+        expectedCount: {type: integer}
+        spread: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: 'Max minus min of the submitted scores, when 2+ submitted. Informational only.'}
+        disagreement: {type: boolean, description: 'The spread is above the threshold (Overview.insights.disagreementThreshold, 15 points). Informational only. False while scores are hidden from a reviewer.'}
+        overdue: {type: boolean, description: Past the due date and not final}
+        finalizedAt: {type: [string, 'null'], format: date-time}
+        releasedAt: {type: [string, 'null'], format: date-time}
+        reviewers: {type: array, items: {$ref: '#/components/schemas/ReviewerProgress'}}
+    ReviewerProgress:
+      type: object
+      required: [reviewer, status, overdue, submittedLate]
+      properties:
+        reviewer: {$ref: '#/components/schemas/Person'}
+        status: {$ref: '#/components/schemas/EvaluationStatus'}
+        overdue: {type: boolean, description: Not submitted and past the due date}
+        submittedLate: {type: boolean, description: Submitted after the due date}
+        score: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: Submitted score}
+        submittedAt: {type: [string, 'null'], format: date-time}
+        evaluationId: {type: [string, 'null'], format: uuid}
+        scoredCount: {type: [integer, 'null'], description: For drafts}
+        criteriaCount: {type: [integer, 'null']}
+
+    # ------------------------------------------------------------ reviewer home
+    MyAssignments:
+      type: object
+      required: [summary, teams]
+      properties:
+        summary:
+          type: object
+          description: '"4 of 7 evaluations submitted · 1 overdue"'
+          required: [expected, submitted, drafts, overdue]
+          properties:
+            expected: {type: integer}
+            submitted: {type: integer}
+            drafts: {type: integer}
+            overdue: {type: integer}
+        teams:
+          type: array
+          items: {$ref: '#/components/schemas/MyTeam'}
+    MyTeam:
+      type: object
+      required: [team, role, reviewers, tasks]
+      properties:
+        team: {$ref: '#/components/schemas/TeamRef'}
+        role: {$ref: '#/components/schemas/ReviewerRole'}
+        reviewers: {type: array, items: {$ref: '#/components/schemas/TeamReviewer'}}
+        defenseSlot: {oneOf: [{$ref: '#/components/schemas/DefenseSlot'}, {type: 'null'}]}
+        tasks:
+          type: array
+          description: The assessments I grade for this team (4 for jury, 1 for advisor)
+          items: {$ref: '#/components/schemas/MyTask'}
+    MyTask:
+      type: object
+      required: [assessment, name, weight, dueAt, status, overdue, submittedLate, criteriaCount]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        name: {type: string}
+        weight: {type: integer}
+        dueAt: {type: string, format: date-time}
+        status: {$ref: '#/components/schemas/EvaluationStatus'}
+        overdue: {type: boolean, description: Not submitted and past the due date}
+        submittedLate: {type: boolean, description: Submitted after the due date}
+        score: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: My submitted score}
+        scoredCount: {type: integer, description: Criteria scored so far (drafts)}
+        criteriaCount: {type: integer}
+        evaluationId: {type: [string, 'null'], format: uuid}
+        updatedAt: {type: [string, 'null'], format: date-time}
+        submittedAt: {type: [string, 'null'], format: date-time}
+
+    # ------------------------------------------------------------ coordinator overview
+    Overview:
+      type: object
+      required: [kpis, assessments, teams, insights]
+      properties:
+        kpis:
+          type: object
+          required: [evaluationsSubmitted, evaluationsExpected, overdue, finalGradesComputed, teamCount, resultsReleased, resultsReleasable]
+          properties:
+            evaluationsSubmitted: {type: integer}
+            evaluationsExpected: {type: integer}
+            overdue: {type: integer, description: Overdue evaluations (not submitted, past due)}
+            finalGradesComputed: {type: integer}
+            teamCount: {type: integer}
+            resultsReleased: {type: integer, description: Team-assessment results released}
+            resultsReleasable: {type: integer, description: Final but not released yet}
+            averageFinalGrade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+        assessments:
+          type: array
+          description: The grid's columns
+          items: {$ref: '#/components/schemas/Assessment'}
+        teams:
+          type: array
+          description: The grid's rows, by team name
+          items: {$ref: '#/components/schemas/OverviewRow'}
+        insights: {$ref: '#/components/schemas/Insights'}
+    Insights:
+      type: object
+      description: Plan 3.5. Informational only.
+      required: [disagreementThreshold, finalGradeDistribution, disagreements]
+      properties:
+        disagreementThreshold: {type: number, examples: [15]}
+        finalGradeDistribution:
+          type: array
+          description: 'Ten bands: [0, 10), [10, 20) ... [90, 100]'
+          items:
+            type: object
+            required: [from, to, count]
+            properties:
+              from: {type: integer}
+              to: {type: integer}
+              count: {type: integer}
+        disagreements:
+          type: array
+          description: Assessments whose reviewers are more than the threshold apart, largest spread first
+          items:
+            type: object
+            required: [team, assessment, spread, submittedCount]
+            properties:
+              team: {$ref: '#/components/schemas/TeamRef'}
+              assessment: {$ref: '#/components/schemas/AssessmentCode'}
+              spread: {$ref: '#/components/schemas/Score'}
+              submittedCount: {type: integer}
+    OverviewRow:
+      type: object
+      required: [team, cells, finalState, pendingEvaluations, composition]
+      properties:
+        team: {$ref: '#/components/schemas/TeamRef'}
+        cells:
+          type: array
+          description: One per assessment, in column order
+          items: {$ref: '#/components/schemas/OverviewCell'}
+        finalGrade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+        finalState: {$ref: '#/components/schemas/FinalState'}
+        pendingEvaluations: {type: integer, description: '"Needs 2 more"'}
+        composition: {$ref: '#/components/schemas/Composition'}
+        defenseSlot: {oneOf: [{$ref: '#/components/schemas/DefenseSlot'}, {type: 'null'}]}
+    OverviewCell:
+      type: object
+      required: [assessment, state, submittedCount, expectedCount, draftCount, overdue, disagreement]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        state: {$ref: '#/components/schemas/TeamAssessmentState'}
+        grade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+        submittedCount: {type: integer}
+        expectedCount: {type: integer}
+        draftCount: {type: integer}
+        overdue: {type: boolean}
+        spread: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]}
+        disagreement: {type: boolean, description: The reviewers' scores are more than the threshold apart}
+        releasedAt: {type: [string, 'null'], format: date-time}
+
+    # ------------------------------------------------------------ schedule
+    DefenseSlot:
+      type: object
+      required: [team, startsAt, endsAt, room, jury, conflicts]
+      properties:
+        team: {$ref: '#/components/schemas/TeamRef'}
+        startsAt: {type: string, format: date-time}
+        endsAt: {type: string, format: date-time}
+        room: {type: string, examples: [Amphi A]}
+        jury: {type: array, items: {$ref: '#/components/schemas/Person'}}
+        conflicts:
+          type: array
+          description: Other defenses that overlap this one and share a jury member
+          items:
+            type: object
+            required: [reviewer, otherTeam]
+            properties:
+              reviewer: {$ref: '#/components/schemas/Person'}
+              otherTeam: {$ref: '#/components/schemas/TeamRef'}
+    DefenseSlotPut:
+      type: object
+      required: [startsAt, room]
+      properties:
+        startsAt: {type: string, format: date-time}
+        durationMinutes: {type: integer, minimum: 10, maximum: 240, default: 40}
+        room: {type: string, minLength: 1, maxLength: 60}
+    Schedule:
+      type: object
+      required: [timeZone, defenseDays, dueDates, slots, conflicts]
+      properties:
+        timeZone: {type: string, examples: [Europe/Paris]}
+        defenseDays: {type: array, items: {type: string, format: date}, description: The three defense days}
+        dueDates:
+          type: array
+          items:
+            type: object
+            required: [assessment, name, dueAt]
+            properties:
+              assessment: {$ref: '#/components/schemas/AssessmentCode'}
+              name: {type: string}
+              dueAt: {type: string, format: date-time}
+        slots: {type: array, items: {$ref: '#/components/schemas/DefenseSlot'}, description: By start time}
+        conflicts:
+          type: array
+          description: 'One per reviewer double-booked at the same time (the banner: "John Doe is in two defenses at 09:00")'
+          items:
+            type: object
+            required: [reviewer, startsAt, teams]
+            properties:
+              reviewer: {$ref: '#/components/schemas/Person'}
+              startsAt: {type: string, format: date-time}
+              teams: {type: array, items: {$ref: '#/components/schemas/TeamRef'}}
+
+    # ------------------------------------------------------------ student
+    StudentHome:
+      type: object
+      required: [team, me, teammates, reviewers, timeline, finalGradeVisible]
+      properties:
+        team:
+          allOf:
+            - $ref: '#/components/schemas/TeamRef'
+            - type: object
+              properties:
+                description: {type: [string, 'null']}
+        me: {$ref: '#/components/schemas/Student'}
+        teammates: {type: array, items: {$ref: '#/components/schemas/Student'}}
+        reviewers: {type: array, items: {$ref: '#/components/schemas/TeamReviewer'}}
+        defenseSlot: {oneOf: [{$ref: '#/components/schemas/DefenseSlot'}, {type: 'null'}]}
+        timeline: {type: array, items: {$ref: '#/components/schemas/StudentTimelineStep'}}
+        finalGradeVisible: {type: boolean}
+        finalGrade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: Only when all five are released}
+    StudentTimelineStep:
+      type: object
+      required: [assessment, name, weight, dueAt, status, released]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        name: {type: string}
+        weight: {type: integer}
+        dueAt: {type: string, format: date-time}
+        status:
+          type: string
+          description: 'UPCOMING: nothing submitted and not yet due. BEING_GRADED: some reviewers submitted, or past due. GRADED: final.'
+          enum: [UPCOMING, BEING_GRADED, GRADED]
+        released: {type: boolean}
+        releasedAt: {type: [string, 'null'], format: date-time}
+        grade: {oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}], description: Only when released}
+    ReleasedResults:
+      type: object
+      required: [assessment, name, weight, grade, releasedAt, reviewers, criteria]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        name: {type: string}
+        weight: {type: integer}
+        grade: {$ref: '#/components/schemas/Score'}
+        releasedAt: {type: string, format: date-time}
+        reviewers:
+          type: array
+          items:
+            type: object
+            required: [reviewer, score]
+            properties:
+              reviewer: {$ref: '#/components/schemas/Person'}
+              score: {$ref: '#/components/schemas/Score'}
+              overallComment: {type: [string, 'null']}
+        criteria:
+          type: array
+          items:
+            type: object
+            required: [criterionId, name, weight, levels]
+            properties:
+              criterionId: {type: string, format: uuid}
+              name: {type: string}
+              weight: {type: integer}
+              levels:
+                type: array
+                description: One per reviewer, in the same order as `reviewers`
+                items:
+                  type: object
+                  required: [reviewerId, level]
+                  properties:
+                    reviewerId: {type: string, format: uuid}
+                    level: {$ref: '#/components/schemas/Level'}
+                    comment: {type: [string, 'null']}
+
+    # ------------------------------------------------------------ evaluations
+    Evaluation:
+      type: object
+      required: [teamId, teamName, assessment, reviewer, status, criteria, scoredCount, criteriaCount, overdue, submittedLate]
+      properties:
+        id: {type: [string, 'null'], format: uuid, description: null for a blank form that was never saved}
+        teamId: {type: string, format: uuid}
+        teamName: {type: string}
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        reviewer: {$ref: '#/components/schemas/Person'}
+        reviewerRole: {$ref: '#/components/schemas/ReviewerRole'}
+        status: {$ref: '#/components/schemas/EvaluationStatus'}
+        criteria: {type: array, items: {$ref: '#/components/schemas/EvaluatedCriterion'}}
+        overallComment: {type: [string, 'null']}
+        score:
+          oneOf: [{$ref: '#/components/schemas/Score'}, {type: 'null'}]
+          description: 'Σ(level × weight) ÷ 4 over the scored criteria (so a draft shows "53.8 so far"); null when nothing is scored'
+        scoredCount: {type: integer}
+        criteriaCount: {type: integer}
+        dueAt: {type: [string, 'null'], format: date-time}
+        overdue: {type: boolean, description: Not submitted and past the due date}
+        submittedLate: {type: boolean, description: Submitted after the due date (shown as overdue on a submitted evaluation)}
+        createdAt: {type: [string, 'null'], format: date-time}
+        updatedAt: {type: [string, 'null'], format: date-time}
+        submittedAt: {type: [string, 'null'], format: date-time}
+    EvaluatedCriterion:
+      type: object
+      required: [criterionId, position, name, weight, descriptions]
+      properties:
+        criterionId: {type: string, format: uuid}
+        position: {type: integer, minimum: 1}
+        name: {type: string}
+        weight: {type: integer}
+        descriptions: {$ref: '#/components/schemas/LevelDescriptions'}
+        level: {oneOf: [{$ref: '#/components/schemas/Level'}, {type: 'null'}]}
+        comment: {type: [string, 'null'], maxLength: 2000}
+    EvaluationDraft:
+      type: object
+      required: [criteria]
+      properties:
+        criteria:
+          type: array
+          items:
+            type: object
+            required: [criterionId]
+            properties:
+              criterionId: {type: string, format: uuid}
+              level: {oneOf: [{$ref: '#/components/schemas/Level'}, {type: 'null'}]}
+              comment: {type: [string, 'null'], maxLength: 2000}
+        overallComment: {type: [string, 'null'], maxLength: 4000}
+    EvaluationHistoryEntry:
+      type: object
+      required: [at, actor, kind]
+      properties:
+        at: {type: string, format: date-time}
+        actor: {$ref: '#/components/schemas/Person'}
+        kind: {type: string, enum: [CREATED, LEVEL_CHANGED, COMMENT_CHANGED, OVERALL_COMMENT_CHANGED, SUBMITTED]}
+        criterionId: {type: [string, 'null'], format: uuid}
+        criterionName: {type: [string, 'null']}
+        from: {oneOf: [{$ref: '#/components/schemas/Level'}, {type: 'null'}]}
+        to: {oneOf: [{$ref: '#/components/schemas/Level'}, {type: 'null'}]}
+
+    # ------------------------------------------------------------ rubrics
+    LevelDescriptions:
+      type: object
+      description: What the work looks like at each level. Level 0 ("Not demonstrated") has no description; show "Not addressed."
+      required: ['1', '2', '3', '4']
+      properties:
+        '4': {type: string, maxLength: 1000}
+        '3': {type: string, maxLength: 1000}
+        '2': {type: string, maxLength: 1000}
+        '1': {type: string, maxLength: 1000}
+    Criterion:
+      type: object
+      required: [id, position, name, weight, descriptions]
+      properties:
+        id: {type: string, format: uuid}
+        position: {type: integer, minimum: 1}
+        name: {type: string, description: Up to ~200 characters, may end with an outcome code like "(2.1)"}
+        weight: {type: integer, minimum: 0, maximum: 100}
+        descriptions: {$ref: '#/components/schemas/LevelDescriptions'}
+    Rubric:
+      type: object
+      required: [assessment, name, criteria, totalWeight, levels]
+      properties:
+        assessment: {$ref: '#/components/schemas/AssessmentCode'}
+        name: {type: string}
+        criteria: {type: array, items: {$ref: '#/components/schemas/Criterion'}}
+        totalWeight: {type: integer, description: Always 100 for a saved rubric}
+        levels:
+          type: array
+          description: The scale, 4 to 0
+          items:
+            type: object
+            required: [value, name]
+            properties:
+              value: {$ref: '#/components/schemas/Level'}
+              name: {type: string, enum: [Exemplary, Accomplished, Developing, Beginning, Not demonstrated]}
+        updatedAt: {type: [string, 'null'], format: date-time}
+        updatedBy:
+          description: Who last saved the rubric (null for the seed)
+          oneOf:
+            - type: object
+              required: [id, displayName]
+              properties:
+                id: {type: string, format: uuid}
+                displayName: {type: string}
+            - {type: 'null'}
+    RubricPut:
+      type: object
+      required: [criteria]
+      properties:
+        criteria:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: object
+            required: [name, weight, descriptions]
+            properties:
+              id: {type: [string, 'null'], format: uuid, description: Keep for existing criteria}
+              name: {type: string, minLength: 1, maxLength: 300}
+              weight: {type: integer, minimum: 0, maximum: 100, description: 'Required, a whole number (33.5 or null is a 400)'}
+              descriptions: {$ref: '#/components/schemas/LevelDescriptions'}
+
+    # ------------------------------------------------------------ notifications and activity
+    NotificationType:
+      type: string
+      description: The events of brief 4.5
+      enum: [GRADE_FINAL, FINAL_GRADE_COMPUTED, RESULTS_RELEASED, DUE_SOON, OVERDUE, ASSIGNED, ROLE_CHANGED, DEFENSE_SCHEDULED]
+    Notification:
+      type: object
+      required: [id, type, text, createdAt, read, link]
+      properties:
+        id: {type: string, format: uuid}
+        type: {$ref: '#/components/schemas/NotificationType'}
+        text: {type: string, examples: ['Final presentation for Team Alpha is final: 87.5.']}
+        createdAt: {type: string, format: date-time}
+        read: {type: boolean}
+        link: {$ref: '#/components/schemas/Link'}
+    Link:
+      type: object
+      description: Where the item leads. The SPA maps it to a route for the signed-in role.
+      required: [kind]
+      properties:
+        kind: {type: string, enum: [EVALUATION, TEAM, SCHEDULE, STUDENT_RESULTS, OVERVIEW, MY_TEAMS]}
+        teamId: {type: [string, 'null'], format: uuid}
+        assessment: {oneOf: [{$ref: '#/components/schemas/AssessmentCode'}, {type: 'null'}]}
+    NotificationPage:
+      type: object
+      required: [content, page, unreadCount]
+      properties:
+        content: {type: array, items: {$ref: '#/components/schemas/Notification'}}
+        page: {$ref: '#/components/schemas/Page'}
+        unreadCount: {type: integer}
+    ActivityEntry:
+      type: object
+      required: [id, kind, actor, text, at]
+      properties:
+        id: {type: string, format: uuid}
+        kind:
+          type: string
+          description: 'Icon in the feed: SUBMITTED (lock), DRAFT_SAVED and LEVEL_CHANGED (pencil), SCHEDULE (calendar), GRADE_FINAL and FINAL_GRADE_COMPUTED (check), RELEASED (eye), ASSIGNMENT (person)'
+          enum: [SUBMITTED, DRAFT_SAVED, LEVEL_CHANGED, SCHEDULE, GRADE_FINAL, FINAL_GRADE_COMPUTED, RELEASED, ASSIGNMENT]
+        actor:
+          type: object
+          required: [displayName]
+          description: 'A person, or a label such as "Team Gamma" or "Schedule"'
+          properties:
+            id: {type: [string, 'null'], format: uuid}
+            displayName: {type: string}
+        text: {type: string, examples: ['submitted the Final presentation for Team Epsilon (1 of 3).']}
+        at: {type: string, format: date-time}
+        link: {$ref: '#/components/schemas/Link'}
+    ActivityPage:
+      type: object
+      required: [content, page]
+      properties:
+        content: {type: array, items: {$ref: '#/components/schemas/ActivityEntry'}}
+        page: {$ref: '#/components/schemas/Page'}

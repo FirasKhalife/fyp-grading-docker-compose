@@ -96,8 +96,10 @@ services:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      # Grafana 12+ downloads its "preinstalled" plugins at start and doesn't listen until that ends; Loki needs none.
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
     volumes:
-      - ./config/grafana/datasource/yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./config/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
     depends_on:
       - gateway
     entrypoint:

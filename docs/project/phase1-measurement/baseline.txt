@@ -1,0 +1,62 @@
+##### baseline IDLE
+container                 avgMiB    maxMiB  avgCPU%  maxCPU%
+keycloak-server              626       627      3.5     49.3
+admin-service                456       456      1.0      6.3
+notification-service         427       428      0.8      6.5
+grafana                      410       411      1.6      7.3
+rubric-service               398       401      1.4      7.1
+evaluation-service           350       351      1.4     16.0
+api-gateway                  335       336      1.0     10.7
+config-server                307       307      0.6      4.3
+registry-server              267       267      1.9      6.8
+alloy                        252       252      1.0      4.9
+mongodb                      138       138      0.5      1.0
+rabbitmq                     120       176     16.3    171.6
+minio                         75        75      0.1      0.5
+loki-write                    74       109      1.5     11.2
+rubric-db                     50        53      0.5      5.5
+admin-db                      50        50      1.0      7.8
+keycloak-db                   48        48      1.0     11.1
+loki-read                     47        47      0.8      3.3
+notification-db               46        46      0.8      8.1
+loki-backend                  37        37      0.4      0.7
+prometheus                    27        27      0.3      0.5
+redis                          8         8      0.3      3.5
+grafana-nginx                  8         8      0.5      6.2
+frontend                       3         3      0.0      0.0
+TOTAL  containers=24  mem avg=4560 MiB max=4597 MiB | cpu avg=38.1% max=232.4% (100%=1 core)
+started 4 visitors for 260s
+##### baseline LOAD (4 visitors)
+container                 avgMiB    maxMiB  avgCPU%  maxCPU%
+keycloak-server              640       643      2.7     40.1
+admin-service                466       470      5.5     27.6
+notification-service         435       437      1.1      6.6
+grafana                      416       418      2.1     16.9
+rubric-service               408       409      3.6     25.3
+evaluation-service           357       360      1.8     12.6
+api-gateway                  348       351      6.7     45.8
+config-server                307       307      0.4      4.5
+registry-server              268       268      1.7      8.8
+alloy                        252       252      1.0      5.1
+mongodb                      136       137      0.4      0.9
+rabbitmq                     119       178     14.9    141.1
+minio                         77        78      0.3      6.2
+loki-write                    73        80      1.1      3.8
+rubric-db                     50        50      0.8      7.4
+admin-db                      50        50      0.9      6.6
+keycloak-db                   48        48      0.6      5.8
+loki-read                     47        52      0.6      4.4
+notification-db               46        46      0.4      6.3
+loki-backend                  37        37      0.4      0.9
+prometheus                    27        27      0.2      1.4
+redis                          8         8      0.3      3.5
+grafana-nginx                  8         8      0.5      5.5
+frontend                       3         3      0.1      0.5
+TOTAL  containers=24  mem avg=4627 MiB max=4696 MiB | cpu avg=48.2% max=173.9% (100%=1 core)
+##### load http codes per visitor
+    195 200       9 kc200 
+    195 200       9 kc200 
+    196 200       9 kc200 
+    197 200       9 kc200 
+               total        used        free      shared  buff/cache   available
+Mem:           11965        6069         334          93        5561        5492

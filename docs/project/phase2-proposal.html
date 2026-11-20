@@ -1,0 +1,307 @@
+<title>FYP Grading Phase 2 Proposal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (proposal) with full-bleed mockup frames; mockups use the proposed app's own tokens */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#14181f; --muted:#5b6574; --line:#e1e5eb;
+  --accent:#1f5f8b; --accent-soft:#e3eef7;
+  --l4:#1f7a5a; --l3:#5aa469; --l2:#d9a03f; --l1:#c8553d; /* rubric levels: Exemplary..Beginning */
+  --chip:#eef1f5; --warn-bg:#fff4e0; --warn-fg:#8a5a00;
+  --font-display:"Instrument Sans",system-ui,sans-serif; --font-body:Inter,system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318; --surface:#171c23; --fg:#e7ebf0; --muted:#97a2b1; --line:#2a313b;
+  --accent:#6aaee0; --accent-soft:#1c2e3d; --l4:#3fb68b; --l3:#7cc488; --l2:#e8b75c; --l1:#e2775f;
+  --chip:#222a34; --warn-bg:#3a2c10; --warn-fg:#f0c674; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318; --surface:#171c23; --fg:#e7ebf0; --muted:#97a2b1; --line:#2a313b;
+  --accent:#6aaee0; --accent-soft:#1c2e3d; --l4:#3fb68b; --l3:#7cc488; --l2:#e8b75c; --l1:#e2775f;
+  --chip:#222a34; --warn-bg:#3a2c10; --warn-fg:#f0c674; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--font-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.prose{max-width:720px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:2rem} h2{font-size:1.45rem;margin-bottom:12px} h3{font-size:1.05rem;margin:18px 0 6px}
+p{margin:.4em 0}
+.eyebrow{font:600 .72rem/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);font-size:1.02rem}
+code{font-family:var(--font-mono);font-size:.86em;background:var(--chip);padding:1px 5px;border-radius:4px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.p-high{background:color-mix(in srgb,var(--l4) 18%,transparent);color:var(--l4)}
+.p-med{background:color-mix(in srgb,var(--l2) 22%,transparent);color:var(--warn-fg)}
+.p-low{background:var(--chip);color:var(--muted)}
+.p-crit{background:color-mix(in srgb,var(--l1) 18%,transparent);color:var(--l1)}
+ul{margin:.3em 0;padding-left:1.2em} li{margin:.2em 0}
+.note{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:.92rem}
+
+/* ---------- mockup frames ---------- */
+.mock{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.mock-cap{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.mock-cap b{font-family:var(--font-display)}
+.mock-cap span{color:var(--muted);font-size:.88rem}
+.app-top{display:flex;align-items:center;gap:14px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font:700 1rem var(--font-display);display:flex;align-items:center;gap:8px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-block}
+.nav{display:flex;gap:4px;font-size:.88rem;flex-wrap:wrap}
+.nav a{padding:5px 10px;border-radius:6px;color:var(--muted);text-decoration:none}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sp{flex:1}
+.who{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.av{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--surface);display:grid;place-items:center;font-size:.72rem;font-weight:600}
+.demo-bar{background:var(--accent);color:var(--surface);font-size:.8rem;padding:5px 18px;display:flex;gap:12px;flex-wrap:wrap}
+.demo-bar u{text-decoration:none;opacity:.85}
+.app-body{padding:20px 18px;display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* persona picker */
+.hero-mock{padding:36px 22px 28px;text-align:left;display:grid;gap:22px}
+.hero-mock h4{font:700 1.7rem/1.15 var(--font-display);margin:0;max-width:30ch}
+.personas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.persona{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.persona .role{font:600 .7rem/1 var(--font-body);letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+.persona b{font-family:var(--font-display);font-size:1.02rem}
+.persona ul{font-size:.82rem;color:var(--muted);padding-left:1.1em;margin:0;flex:1}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:6px;border-radius:7px;padding:7px 12px;font:600 .84rem var(--font-body);border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:default}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.dashed{border-style:dashed;background:transparent;color:var(--muted);border-color:var(--line)}
+.arch{font-size:.8rem;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.arch span{background:var(--chip);border-radius:5px;padding:2px 7px;font-family:var(--font-mono);font-size:.74rem}
+
+/* grading screen */
+.grade-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px}
+@media (max-width:760px){.grade-grid{grid-template-columns:1fr}}
+.crumbs{font-size:.8rem;color:var(--muted)}
+.rub{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.rub:first-of-type{border-top:none}
+.rub-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.rub-h b{font-weight:600}
+.lvls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media (max-width:520px){.lvls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lvl{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:.76rem;line-height:1.35;color:var(--muted);background:var(--surface)}
+.lvl b{display:flex;justify-content:space-between;font-size:.78rem;color:var(--fg);margin-bottom:2px}
+.lvl.sel{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);background:color-mix(in srgb,var(--c) 9%,var(--surface))}
+.lvl.sel b{color:var(--c)}
+.score-big{font:700 2.4rem/1 var(--font-display);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:var(--chip);display:flex;overflow:hidden}
+.bar i{display:block;height:100%}
+.kv{display:flex;justify-content:space-between;font-size:.83rem;padding:3px 0}
+textarea.fake{width:100%;min-height:62px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font:inherit;font-size:.82rem;padding:8px;resize:none}
+
+/* admin overview */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi .n{font:700 1.6rem/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:.78rem;color:var(--muted)}
+.heat td{text-align:center}
+.heat td:first-child{text-align:left}
+.cell{display:inline-block;min-width:44px;padding:2px 6px;border-radius:5px;font-size:.78rem;font-weight:600;font-family:var(--font-mono)}
+.c4{background:color-mix(in srgb,var(--l4) 22%,transparent);color:var(--l4)}
+.c3{background:color-mix(in srgb,var(--l3) 22%,transparent);color:var(--l3)}
+.c2{background:color-mix(in srgb,var(--l2) 24%,transparent);color:var(--warn-fg)}
+.c0{background:var(--chip);color:var(--muted);font-weight:500}
+.cp{border:1px dashed var(--line);color:var(--muted);font-weight:500}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.feed{display:grid;gap:10px;font-size:.82rem}
+.feed div{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--accent)}
+.evt{font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+<header class="prose">
+  <div class="eyebrow">Phase 2a · audit + proposal · approved 15 Nov 2026 · built around the Assay design</div>
+  <h1>FYP Grading: what to build before it goes live</h1>
+  <p class="lede">I ran the slim stack, walked every screen, and read all 11 repos. The short version: the architecture is a good story, but on <code>master</code> the product doesn't work. Nobody can log in, the grading pipeline fails at four separate points, and every admin read is public. The frontend was written against an older backend and was never updated. So the proposal is: make the core flow work and safe first, then rebuild the frontend on top of it, then add the features that make a 5-minute visit memorable.</p>
+</header>
+
+<section class="prose">
+  <h2>Roadmap from here</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Step</th><th>What happens</th><th>Who</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>1. Build</td><td>Backend (contract, core fixes, Assay domain), frontend (Assay), and the AWS Terraform reference</td><td>3 sessions in parallel</td><td>Frontend PR open · IaC merged · backend working</td></tr>
+      <tr><td>2. Frontend review</td><td>Independent <code>/code-review</code> of PR #3 against the brief and the design. The frontend session fixes the findings.</td><td>Review session, then frontend</td><td>Running</td></tr>
+      <tr><td>3. Backend review</td><td>After your last backend changes: an independent review of all 9 <code>phase2-assay</code> branches, then the backend session fixes the findings.</td><td>Review session, then backend</td><td>Next</td></tr>
+      <tr><td>4. Integration</td><td>Full stack in WSL with all branches; the frontend moves from mocks to the real API. Test the real Keycloak login for each persona, then a Playwright run and a manual walk of every screen. Also check: demo copy and reset, release, notifications, relative dates. Fixes land on each repo's existing branch.</td><td>Integration session</td><td>After the backend</td></tr>
+      <tr><td>5. Polish</td><td><b>Keycloak login page themed as Assay</b> (new, about 1 day), so the persona login doesn't drop the visitor onto a stock Keycloak screen. Then the rest of the plan not in the first milestone: audit trail (3.4), insights (3.5), CSV export (3.6), de-duplication (4.4), linters (4.6).</td><td>One session per repo group</td><td>After 4</td></tr>
+      <tr><td>6. Merge</td><td>You merge: backend repos first, then the frontend.</td><td>You</td><td>—</td></tr>
+      <tr><td>7. Docker</td><td>Production compose: memory limits that fit the 8 GB host (from the Phase 1 measurements), health checks, restart policies, images published to GHCR</td><td>Session</td><td>Later</td></tr>
+      <tr><td>8. Credentials</td><td>Rotate the Keycloak secret that was committed. Generate every secret on the host, never in git. Harden the Keycloak admin console. Keep the demo persona passwords deliberately public but limited to demo roles.</td><td>Session (you do the rotation)</td><td>Later</td></tr>
+      <tr><td>9. Deploy</td><td>Order the Netcup VPS (costs money, you approve). Ansible for the host. OpenTofu for Cloudflare: tunnel, DNS, WAF, and Access in front of the admin consoles (5.2). Backups, uptime check, the midnight demo purge.</td><td>Session + you</td><td>Later</td></tr>
+      <tr><td>10. CI/CD</td><td>GitHub Actions per repo (lint, test, build image), then deploy on merge</td><td>Session</td><td>Last</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 style="margin-top:28px">Design approved: Assay</h2>
+  <p>The frontend design is done in Claude Design and replaces the mockups that used to be on this page. The product is now called <b>Assay</b>.</p>
+  <ul>
+    <li><b>Canvas</b>: <a href="https://claude.ai/artifact/Di7AuvAGWwEF77mkzmuW87">Assay design canvas</a>. A local copy of every board is in <code>design/assay-canvas/</code>.</li>
+    <li><b>Build instructions</b>: <code>DESIGN-HANDOFF-PROMPT.md</code> covers the tokens, the level mark, the component mapping, the demo data decided during design, and the build order. Section 2 below now follows it.</li>
+    <li><b>Sources of truth</b>, in this order: <code>PRODUCT-BRIEF.md</code> for business rules, then the canvas files, then the handoff prompt.</li>
+  </ul>
+  <p>Merging the handoff into the plan raised four things:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Topic</th><th>What the handoff says</th><th>What the plan does</th></tr></thead>
+    <tbody>
+      <tr><td>Order</td><td>Build the frontend in <code>fyp-grading-frontend</code> only.</td><td>The screens need endpoints that don't exist yet: release, schedule, students, the demo copy, per-user notifications. So the API contract (OpenAPI) is written first. The frontend is then built against MSW mocks of that contract while the backend catches up. The two tracks run in parallel, and nothing waits on the other.</td></tr>
+      <tr><td>Demo data</td><td>Rosters, students, defense slots, grades, release state, and "today" = Wed 10 June 2026.</td><td>All of it becomes the seed (1.4 below), so the real backend shows exactly what the boards show. Item 1.4 grows by 1 day.</td></tr>
+      <tr><td>Proposal weights</td><td>Proposal criteria weighted 15/10/15/15/15/10/10/10 (made up during design).</td><td>The seed has <b>10/20/20/10/15/10/10/5</b>, and the seed wins. The per-criterion levels behind Alpha's 86.7 proposal score are recomputed so the totals still match. Progress, Advisor (20% each) and the other assessments already match.</td></tr>
+      <tr><td>"Today"</td><td>A fixed demo date, 10 June 2026.</td><td><b>Decided: relative dates.</b> Seed dates are stored as offsets from defense day 2 and turned into real dates when a visitor's demo copy is made. "Today" is always the middle defense day. Cost: 0.5 day.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">Tailwind: the handoff mentions <code>tailwind.config</code>. On Tailwind v4 the same tokens go in <code>@theme</code> in <code>globals.css</code>. Same values, newer setup.</p>
+
+  <h2 style="margin-top:28px">Update: scope after your decisions (15 Nov)</h2>
+  <p>The full product decisions are in <code>PRODUCT-BRIEF.md</code> (section 9). Real assessment weights: 15/0/25/30/30. These items join the plan. The efforts below are backend only; the screens they need are counted in section 2.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Added</th><th>What it involves</th><th>Effort</th></tr></thead>
+    <tbody>
+      <tr><td>Student persona, release per assessment</td><td>Students and team members in admin-service, STUDENT role in Keycloak, release state per assessment, student home and timeline. Replaces 3.3.</td><td>3</td></tr>
+      <tr><td>Private demo copy per visitor</td><td>A random demo session ID from the browser scopes every row and document in all 4 services. A persona click clones the seed into a new copy. Midnight purge job and a "Reset my demo" endpoint. Role switching keeps the same copy.</td><td>4</td></tr>
+      <tr><td>Due dates and defense schedule</td><td>Due date per assessment, defense slots per team, overdue states, schedule screens.</td><td>2.5</td></tr>
+      <tr><td>Level 0, per-criterion comments, new level descriptions</td><td>Score range 0–100; comments in evaluations; seed descriptions for the final report and final presentation (written in the brief, Appendix A).</td><td>1</td></tr>
+      <tr><td>Personal notifications for every role</td><td>Per-user read state and the event table in the brief. Extends 3.2.</td><td>1</td></tr>
+      <tr><td>Team composition rules</td><td>1–5 reviewers, at least 1 jury member and 1 advisor, enforced in the API.</td><td>0.5</td></tr>
+    </tbody>
+  </table></div>
+  <p>That adds about 12 days of backend work. Order: backend core (1.x) and the API contract first, then these domain additions on the backend and the Assay frontend (section 2) in parallel.</p>
+
+  <h2 style="margin-top:28px">What I found</h2>
+  <h3>The product, as a visitor sees it</h3>
+  <ul>
+    <li><b>Six screens</b>: login, home, an "evaluate" dialog, the grading form, an admin team list, and a rubric page. Home is three grey bands of identical buttons labelled <code>TEAM 1</code>, <code>TEAM 2</code> (the database has names, the API doesn't return them). There's a visible typo, "Avdisor assessment".</li>
+    <li><b>Grading</b> is four dropdowns per rubric (Exemplary 4 → Beginning 1) with no level descriptions, no comment, no running score, and validation through <code>window.alert</code>. Null grades slip past the check.</li>
+    <li><b>Rubric editing</b> is a full-screen raw JSON textarea.</li>
+    <li><b>Admin results</b> are plain text lines like "Final Report (30%): 81/100". No table, no progress, no state.</li>
+    <li>No branding, no explanation of what the app is, no mobile layout, no dark mode, no empty or loading states.</li>
+  </ul>
+  <h3>Why it doesn't work today</h3>
+  <ul>
+    <li><b>Login</b>: the frontend POSTs to <code>/api/auth/login</code>, which was removed in the Keycloak move. Any failure shows "Invalid email or password". There's also no realm import, and seeded reviewers have random UUIDs that can never match a Keycloak user.</li>
+    <li><b>Frontend ↔ backend drift</b>: the frontend calls <code>/reviewers/{id}/home</code> (backend: <code>/reviewers/home</code>), types reviewer ids as numbers (backend: UUIDs), uses <code>JURY_MEMBER</code> (backend: <code>JURY</code>). The auth header is computed once at module load, so even a valid token isn't sent until a reload.</li>
+    <li><b>Grading pipeline, four independent breaks</b>: evaluation-service's Feign client posts to <code>/api/</code> instead of <code>/api/grades/</code>; admin-service merges an entity outside a transaction in the RabbitMQ consumer (retries 5×, then dead-letters); that merge would also wipe the team name; and evaluation-service expects a rubric shape that rubric-service doesn't return. Several read endpoints also fail on bad JPA mappings.</li>
+    <li><b>Security</b>: <code>@RolesAllowed</code> is inert (no <code>@EnableMethodSecurity</code> anywhere) and GETs are open, so I listed every reviewer's email through the gateway with no token. Actuator exposes everything including <code>heapdump</code> and <code>shutdown</code>, and the gateway routes it. Grading trusts <code>reviewerId</code> from the request body. A Keycloak client secret is committed.</li>
+  </ul>
+  <h3>The code, as a senior reviewer sees it</h3>
+  <ul>
+    <li><b>Tests</b>: 5 in the whole system, all <code>contextLoads</code>, and admin-service's is excluded from the build. The one real test was deleted. The frontend has none.</li>
+    <li><b>Duplication</b>: <code>AuthoritiesConverter</code> ×6, <code>SecurityConfig</code>/<code>RestExceptionHandler</code>/<code>LoggingAspect</code> ×4, <code>AssessmentEnum</code> ×4, hand-copied DTOs that have already drifted, 10 near-identical gateway routes.</li>
+    <li><b>API design</b>: every collection is mapped to <code>"/"</code> (so <code>/api/rubrics</code> is a 404 on Spring 6), creates return 200, no validation, no pagination, no OpenAPI, bare <code>{status,message}</code> errors. Audit columns always say <code>SYSTEM</code>.</li>
+    <li><b>Docs</b>: no README in any service. The frontend README is the Vite template.</li>
+    <li><b>Versions</b>: Spring Boot 3.1.5 / Cloud 2022.0.4 (config-server alone is on 3.3.3), Java 17, Node 18, Vite 4, ESLint 8. All out of support.</li>
+    <li><b>Terraform</b>: one 714-line <code>main.tf</code> that would fail at <code>apply</code> (empty key, invalid CIDR, both EIPs on one instance) and wouldn't work if fixed (no route to the internet, egress allows only port 0, no Keycloak). SSH is open to the world on 8 instances.</li>
+    <li><b>CI</b>: a broken Jenkinsfile on admin-service, copies of it on three <code>add_*_pipeline</code> branches, and a GitHub workflow on deprecated v3 actions. Left for the CI phase as agreed. Every other remote branch is fully merged and could be deleted later (your call).</li>
+  </ul>
+  <p class="small muted">Full notes, with file and line references: <code>side-session-notes/…/backend-audit.md</code>, <code>ui-audit.md</code>, <code>iac-audit.md</code>.</p>
+</section>
+
+
+<section>
+  <h2>Proposal, in the order I'd do it</h2>
+  <p class="prose muted small">Effort is my working time in days. Value is what it does for the 5-minute visit and for a reviewer reading the code. Each repo gets one branch and one PR covering all its items; I'll ask before every push.</p>
+
+  <h3>1. Backend: make the core flow work and safe (prerequisite for everything)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Change</th><th>Repos</th><th>Effort</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>1.1</td><td><b>Upgrade</b> to the current Spring Boot 4.x / Spring Cloud 2025.x line on Java 25 (LTS), removing the hand-pinned versions that fight the BOM. Done first so every fix lands on the modern base. Exact versions confirmed at implementation.</td><td>all 7 Spring</td><td>2</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>1.2</td><td><b>Fix the grading pipeline</b>: Feign path, transactional consumer, team-name wipe, rubric contract, broken JPA mappings and rubric create/update. Add an idempotent consumer so redelivery can't double-count.</td><td>admin, evaluation, rubric</td><td>2</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>1.3</td><td><b>Security</b>: enable method security, read roles from <code>realm_access</code>, take the reviewer from the JWT (closes the IDOR), lock actuator to health/info/prometheus and stop routing it, remove the committed secret (rotation stays in the credentials phase).</td><td>all Spring, gateway, config</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>1.4</td><td><b>Demo identity</b>: Keycloak realm export with the personas, fixed UUIDs shared between Keycloak and the seed SQL, a public PKCE client for the SPA. The seed is the Assay demo data from the handoff: 6 teams and their rosters, students, defense slots, every team's grades and per-criterion levels and comments, release state, the Beta spread and the Delta outlier.</td><td>docker-compose, admin, evaluation, rubric</td><td>2.5</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>1.5</td><td><b>Gateway</b>: replace the 10 copied routes with one config-driven list, rate-limit by <code>CF-Connecting-IP</code> with demo-friendly limits, drop the <code>/api/auth</code> route, add CORS for the SPA origin.</td><td>gateway, config</td><td>0.5</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>1.6</td><td><b>End-to-end test</b>: Testcontainers (Postgres, Mongo, RabbitMQ) that submits every evaluation for a team and asserts the final grade and notification. This is the test that proves the event-driven design works.</td><td>admin + evaluation</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2. Frontend: build Assay</h3>
+  <p class="prose">This is a rewrite in the same repo, following <code>DESIGN-HANDOFF-PROMPT.md</code> and the canvas. The current frontend is ~1,200 lines, out of sync with the API, and every screen changes, so rewriting costs less than refactoring. MUI is removed.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Choice</th><th>Recommendation</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Build</td><td>React 19, TypeScript strict, current Vite, react-router (kept)</td><td>Same skills as today, current versions.</td></tr>
+      <tr><td>UI kit</td><td><b>Tailwind v4 + shadcn/ui</b> (Radix). Sonner for toasts.</td><td>This is the kit the design maps to. You own the components.</td></tr>
+      <tr><td>Data</td><td>TanStack Query, with types generated from the OpenAPI contract</td><td>Caching and optimistic updates, and no hand-copied interfaces to drift again.</td></tr>
+      <tr><td>Auth</td><td><code>oidc-client-ts</code> (Authorization Code + PKCE) against Keycloak</td><td>The persona cards run the real login flow.</td></tr>
+      <tr><td>Charts</td><td>Recharts</td><td>Grade distribution, if added.</td></tr>
+      <tr><td>Tests</td><td>Vitest + Testing Library, MSW, axe, and a Playwright smoke test per persona</td><td>MSW also lets the frontend run with no backend while the backend is being built.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose"><b>Visual style, from the design</b>:</p>
+  <ul class="prose">
+    <li>Warm paper neutrals, one deep-blue primary, and amber and green for state.</li>
+    <li>IBM Plex Sans, and IBM Plex Mono for numbers.</li>
+    <li>Dark mode is designed separately, not inverted.</li>
+    <li>Levels are shown by the <b>level mark</b>: four ascending bars, the numeral and the name, with a blue ramp as a redundant fourth cue, so it never depends on colour. Any 0–100 score uses the mark of its band.</li>
+  </ul>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Step (handoff order)</th><th>Boards</th><th>Effort</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>2.1</td><td>Tokens (light and dark), fonts, Tailwind and shadcn setup, MUI removed, OIDC login, MSW mocks of the contract</td><td>Main</td><td>1</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.2</td><td>App shell: demo banner with role switcher and in-place reset, a header per role, <code>LevelMark</code>, <code>ScoreChip</code>, status chips</td><td>P2, Main</td><td>1</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.3</td><td>Grading form: radio-group level cards with descriptions, per-criterion comments, sticky live score, autosaved draft, inline submit confirm. Score maths unit-tested (levels 4, 3, 2 on weights 20/40/40 → 70.0).</td><td>P4 (×4)</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.4</td><td>My teams for jury and advisor (Karim's home built from the same pattern), with loading, empty and error states</td><td>P3 (×3)</td><td>1</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.5</td><td>Coordinator overview: KPIs, keyboard-navigable team × assessment grid, live feed, in-place release flow</td><td>P5 (×3)</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.6</td><td>Student home, before and after release, with a vertical timeline on mobile</td><td>P11 (×3)</td><td>1</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>2.7</td><td>Team detail: spread indicator, criterion × reviewer table, draft audit trail, conflict alert</td><td>P6</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>2.8</td><td>Rubrics: view tabs, and an editor with a live 100% check and reordering</td><td>P7 (×2)</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>2.9</td><td>Schedule: day and list views, a conflict banner with a one-click fix, due dates</td><td>P9</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>2.10</td><td>Notifications popover. Landing with persona cards. Not designed, so built from existing patterns: P8 Teams and people, P12 utility pages, P5 on mobile.</td><td>P10, P1, —</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>2.11</td><td>Dark mode everywhere, mobile pass at 375 px, then a keyboard-only walkthrough and axe check (WCAG 2.2 AA)</td><td>all</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>3. New features</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Feature</th><th>Effort</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>3.1</td><td><b>Reviewer assignment</b>: API + UI to put reviewers on teams with a role. Today this exists only in seed SQL, so an admin can't actually run a session.</td><td>1.5</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>3.2</td><td><b>Live activity</b>: per-user notifications pushed over Server-Sent Events through the gateway. A visitor submits a grade as jury, switches to coordinator, and watches it land. This makes RabbitMQ visible.</td><td>2</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>3.3</td><td><b>Student persona</b> (open question in DECISIONS.md): team members in admin-service, a STUDENT role in Keycloak, and a coordinator "release results" step. Students see released grades and comments, read-only. It fits the domain and completes the story, but it's new model, role and screens.</td><td>2.5</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>3.4</td><td><b>Audit trail</b>: real <code>createdBy</code>/<code>updatedBy</code> from the JWT and a per-team history ("Jane changed Technical depth 3 → 4").</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>3.5</td><td><b>Insights</b>: grade distribution and reviewer spread per team (flags when jury members disagree by more than 15 points).</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>3.6</td><td>CSV export of results</td><td>0.5</td><td><span class="pill p-low">Low</span></td></tr>
+      <tr><td>—</td><td>Not proposed now: outbox pattern + dead-letter replay screen, rubric versioning, PDF reports. Good talking points, but each is more effort than its 5-minute value.</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>4. Code quality</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Change</th><th>Effort</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>4.1</td><td>Consistent REST: plural resources without trailing slash, 201 + <code>Location</code> on create, Bean Validation on every DTO, RFC 7807 <code>ProblemDetail</code> errors, paging on lists, springdoc OpenAPI per service and aggregated at the gateway.</td><td>2</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>4.2</td><td>Unit tests for the grade computation and mappers, <code>@WebMvcTest</code> slices for security rules (which role can call what), plus 1.6. Target the logic, not a coverage number.</td><td>2</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>4.3</td><td>A real README per repo: what the service owns, its API and events, how to run it, and a shared architecture diagram (Mermaid) in the workspace repo.</td><td>1</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>4.4</td><td>Duplication: keep each service self-contained (no shared library to publish and version, which adds coupling and CI friction), but make the copies identical and small, and replace hand-copied DTOs with OpenAPI-generated clients. Delete dead code (<code>.run</code> files, unused Feign fallbacks, the <code>/api/auth</code> remnants).</td><td>1</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>4.5</td><td>Dockerfiles on <code>eclipse-temurin:25-jre</code>, layered jars, non-root user, the gateway packaging fix. Small, and needed to run anything, so it moves forward from the Docker phase.</td><td>0.5</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>4.6</td><td>Spotless or Checkstyle + ESLint/Prettier configured in each repo, ready for CI later.</td><td>0.5</td><td><span class="pill p-low">Low</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>5. Infrastructure as code</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Change</th><th>Effort</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>5.1</td><td><b>Rewrite the AWS repo</b> as a credible reference deployment that's validated but never applied: VPC module, one right-sized instance in a private subnet, SSM instead of SSH, IMDSv2, encrypted volumes, secrets in SSM Parameter Store, S3 state, AMI from the SSM parameter. <code>tofu validate</code>, tflint, checkov and <code>terraform test</code> with mock providers run without AWS credentials. README states the monthly cost and why the live demo runs on a VPS instead.</td><td>1.5</td><td><span class="pill p-med">Medium</span></td></tr>
+      <tr><td>5.2</td><td><b>Real host as code</b> (deployment phase, listed for completeness): OpenTofu for Cloudflare (tunnel, DNS, WAF rules, Access in front of admin consoles), Ansible for the Netcup box (hardening, Docker, swap, compose, cloudflared). Netcup has a REST API (beta) for reinstall, firewall, snapshots and rDNS, but no maintained Terraform provider and no API to order a server, so ordering stays manual.</td><td>2–3</td><td><span class="pill p-high">High</span></td></tr>
+      <tr><td>5.3</td><td><b>AWS CDK version: skip.</b> It would duplicate 5.1 for a demo that never runs on AWS. The time pays off more in 5.2, which is real and live. Revisit only if you're targeting AWS-heavy roles.</td><td>(2–3)</td><td><span class="pill p-low">Low</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>6. Workspace</h3>
+  <p class="prose">Recommendation: <b>turn <code>fyp-grading-docker-compose</code> into the workspace root</b> and rename it on GitHub to <code>fyp-grading</code> (GitHub keeps a redirect). It's already the repo that ties everything together. It would hold the compose files, <code>AGENTS.md</code>/<code>CLAUDE.md</code>, <code>docs/</code> (architecture, decisions, the phase reports), and scripts to clone every service repo into a gitignored <code>services/</code> folder and to seed or reset the demo. A separate new workspace repo would mean two repos describing the same system. I won't restructure anything until you say so.</p>
+  <p class="prose"><b>Decided 20 Nov 2026:</b> no rename. The repo names stay, and this repo keeps the contract (<code>contract/</code>) and the project documents (<code>docs/project/</code>).</p>
+
+  <h3>Totals</h3>
+  <p class="prose">Backend core (1) ≈ 10 days · Frontend (2, Assay) ≈ 12.5 · Features 3.1–3.2 ≈ 3.5, plus 3.3–3.6 ≈ 5 · Code quality (4) ≈ 7 · AWS rewrite (5.1) ≈ 1.5. Scope additions (top of page) ≈ 12. <b>Suggested first milestone</b>: the API contract, then 1 + 2 + 3.1 + 3.2 + 4.3 + 4.5 with the backend and frontend tracks in parallel. At that point the demo works end to end, looks good, and every repo has a README, which is enough to deploy. The rest can follow.</p>
+</section>
+</div>

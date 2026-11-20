@@ -1,0 +1,40 @@
+##### slim IDLE
+container                 avgMiB    maxMiB  avgCPU%  maxCPU%
+keycloak-server              507       507      0.4      4.0
+admin-service                302       302      0.5      4.0
+rubric-service               246       247      0.9      8.7
+notification-service         242       242      1.0      5.8
+api-gateway                  204       205      0.8      5.4
+evaluation-service           197       198      0.9      4.4
+config-server                190       191      0.3      3.7
+mongodb                      178       179      2.3     11.5
+registry-server              170       172      1.6      5.5
+rabbitmq                     108       109     24.5    165.3
+admin-db                      98        98      0.3      5.4
+redis                         12        12      0.3      2.8
+frontend                       3         3      0.0      0.0
+TOTAL  containers=13  mem avg=2457 MiB max=2461 MiB | cpu avg=33.7% max=182.1% (100%=1 core)
+started 4 visitors for 260s
+##### slim LOAD (4 visitors)
+container                 avgMiB    maxMiB  avgCPU%  maxCPU%
+keycloak-server              521       524      5.7     79.3
+admin-service                311       313      1.7     10.3
+rubric-service               257       258      1.9      8.1
+notification-service         256       257      0.8      6.1
+api-gateway                  218       219      2.9      6.3
+evaluation-service           203       204      0.7      5.2
+config-server                191       192      0.4      3.9
+mongodb                      180       181      0.8      8.1
+registry-server              172       177      1.3      6.1
+rabbitmq                     109       145     16.1    174.0
+admin-db                      99       103      1.1      7.0
+redis                         13        13      0.2      0.3
+frontend                       3         3      0.1      0.1
+TOTAL  containers=13  mem avg=2533 MiB max=2555 MiB | cpu avg=33.7% max=196.3% (100%=1 core)
+##### load http codes per visitor
+    193 200       9 kc200 
+    193 200       9 kc200 
+    194 200       9 kc200 
+    194 200       9 kc200 
+               total        used        free      shared  buff/cache   available
+Mem:           11965        4239        2162          44        5563        7371

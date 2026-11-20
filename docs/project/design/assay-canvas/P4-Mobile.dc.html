@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grade Team Beta, mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t{--paper:#F6F5F1;--surface:#FFFFFF;--raised:#F1F0EB;--line:#D9D6CC;--line2:#B9B6AC;--ink:#1B1F24;--ink2:#3B424C;--muted:#545B66;--faint:#8A919C;--pri:#1F4E8C;--pri-h:#163A69;--on-pri:#FFFFFF;--pri-soft:#EEF3FA;--amber:#94470C;--amber-soft:#FBEEDF;--amber-line:#C98A4B;--amber-bg:#FFF9F2;--green:#1D6A4C;--green-soft:#E3F1EA;--banner:#1B1F24;--banner-ink:#E7E9EC;--banner-muted:#C3C8D0;--l4:#1F3F70;--l4i:#FFFFFF;--l3:#44699F;--l3i:#FFFFFF;--l2:#A9BEDD;--l2i:#1B1F24;--l1:#DCE5F2;--l1i:#1B1F24;--l0:#F1F0EB;--l0i:#1B1F24;--l0b:#545B66;--sel:#1F4E8C;--shadow:0 12px 32px rgba(27,31,36,.14)}
+.t.dark{--paper:#111418;--surface:#181C22;--raised:#1F242B;--line:#2E353F;--line2:#4A525E;--ink:#E7E9EC;--ink2:#C9CED6;--muted:#A3AAB5;--faint:#7D8590;--pri:#8DB4EE;--pri-h:#B5CFF5;--on-pri:#0E1620;--pri-soft:#1C2A3D;--amber:#F0A65E;--amber-soft:#33240F;--amber-line:#A8702F;--amber-bg:#221A10;--green:#6FCB9F;--green-soft:#11291F;--banner:#0B0D10;--banner-ink:#E7E9EC;--banner-muted:#A3AAB5;--l4:#B5CFF5;--l4i:#0E1620;--l3:#6F98D6;--l3i:#0E1620;--l2:#34507A;--l2i:#E7E9EC;--l1:#233247;--l1i:#E7E9EC;--l0:transparent;--l0i:#E7E9EC;--l0b:#6B7380;--sel:#8DB4EE;--shadow:0 12px 32px rgba(0,0,0,.5)}
+.t{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:22px;min-height:100vh;scroll-behavior:smooth}
+.t *{box-sizing:border-box}
+.t h1,.t h2,.t h3,.t p,.t ul,.t ol{margin:0}
+.t a{color:var(--pri)}.t a:hover{color:var(--pri-h)}
+.t :focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.ink2{color:var(--ink2)}
+.wrap{max-width:1360px;margin:0 auto;padding-left:40px;padding-right:40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:10px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;border:1px solid transparent}
+.btn-pri{background:var(--pri);color:var(--on-pri)!important}.btn-pri:hover{background:var(--pri-h)}
+.btn-ghost{background:var(--surface);color:var(--ink)!important;border-color:var(--line2)}.btn-ghost:hover{border-color:var(--pri)}
+.btn-quiet{background:transparent;color:var(--pri)!important;padding:0 10px}
+.btn[aria-disabled="true"]{background:var(--raised);color:var(--ink2)!important;border-color:var(--line)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;line-height:1}
+.c-none,.c-wait{border:1px solid var(--faint);color:var(--ink2);font-weight:500}
+.c-draft{border:1px dashed var(--pri);background:var(--pri-soft);color:var(--pri)}
+.c-sub{background:var(--green-soft);color:var(--green)}
+.c-over{background:var(--amber-soft);color:var(--amber)}
+.c-rel{background:var(--green);color:var(--surface)}
+.c-plain{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font-weight:500}
+.lvb{display:inline-flex;align-items:flex-end;gap:2px;height:14px;flex:none}
+.lvb i{display:block;width:4px;border-radius:1px;background:currentColor}
+.lvb i:nth-child(1){height:5px}.lvb i:nth-child(2){height:8px}.lvb i:nth-child(3){height:11px}.lvb i:nth-child(4){height:14px}
+.lvb i.o{background:transparent;border:1.5px solid currentColor;opacity:.6}
+.f4{background:var(--l4);color:var(--l4i)}.f3{background:var(--l3);color:var(--l3i)}.f2{background:var(--l2);color:var(--l2i)}.f1{background:var(--l1);color:var(--l1i)}.f0{background:var(--l0);color:var(--l0i);border:1.5px dashed var(--l0b)}
+.lvchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:6px;font-size:13px;font-weight:600;white-space:nowrap}
+.banner{background:var(--banner);color:var(--banner-ink);font-size:14px}
+.banner .in{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0 24px;flex-wrap:wrap}
+.banner p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0}
+.banner a{color:#FFFFFF!important;font-weight:600;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;min-height:44px;padding:0 10px}
+.banner button{min-height:44px;padding:0 14px;border-radius:8px;border:1px solid #4A525E;background:transparent;color:#FFFFFF;font:inherit;font-weight:600;cursor:pointer}
+.banner .dim{color:var(--banner-muted)}
+.apphdr{background:var(--surface);border-bottom:1px solid var(--line)}
+.apphdr .in{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:8px;color:var(--l4)!important;text-decoration:none;min-height:44px}
+.dark .logo{color:var(--pri)!important}
+.logo b{font-size:20px;font-weight:600;letter-spacing:-0.02em;color:var(--ink)}
+.nav{display:flex;gap:4px}
+.nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;font-weight:500;color:var(--ink2)!important;text-decoration:none}
+.nav a[aria-current]{color:var(--ink)!important;font-weight:600;box-shadow:inset 0 -3px 0 var(--pri)}
+.iconbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)!important;cursor:pointer;flex:none}
+.badge{position:absolute;top:4px;right:3px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1}
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--l3);color:var(--l3i);font:inherit;font-weight:600;flex:none}
+.show-sm{display:none!important}
+.sr{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.lvgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.lvl{position:relative;display:flex;flex-direction:column;gap:6px;min-height:44px;padding:12px 12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background-color .15s}
+.lvl:hover{border-color:var(--pri)}
+.lvl:has(.sr:focus-visible){outline:3px solid var(--sel);outline-offset:2px}
+.lvl .desc{font-size:13px;line-height:19px;color:var(--muted)}
+.lvl .tick{display:none;width:20px;height:20px;border-radius:50%;background:currentColor;align-items:center;justify-content:center}
+.lvl.on{border:2px solid var(--sel);padding:11px 11px 13px}
+.lvl.on .tick{display:inline-flex}
+.lvl.on .desc{color:inherit}
+.lv4{--tk:var(--l4)}.lv3{--tk:var(--l3)}.lv2{--tk:var(--l2)}.lv1{--tk:var(--l1)}.lv0{--tk:var(--raised)}
+.lvl.on.lv4{background:var(--l4);color:var(--l4i)}.lvl.on.lv3{background:var(--l3);color:var(--l3i)}.lvl.on.lv2{background:var(--l2);color:var(--l2i)}.lvl.on.lv1{background:var(--l1);color:var(--l1i)}
+.lvl.on.lv0{background:var(--raised);border:2px dashed var(--l0b)}
+.locked .lvl{cursor:default}.locked .lvl:not(.on){opacity:.55}.locked .lvl:hover{border-color:var(--line)}.locked .lvl.on:hover{border-color:var(--sel)}
+.crit{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin-top:24px;transition:border-color .15s,background-color .15s}
+.crit.unscored{border-color:var(--amber-line)}
+.crit.missing{border:2px solid var(--amber-line);background:var(--amber-bg)}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px;border-radius:8px;text-decoration:none;border:1px solid transparent}
+.tile:hover{outline:2px solid var(--pri);outline-offset:1px}
+.t a.tile.f4{color:var(--l4i)}.t a.tile.f3{color:var(--l3i)}.t a.tile.f2{color:var(--l2i)}.t a.tile.f1{color:var(--l1i)}.t a.tile.f0{color:var(--l0i)}
+.tile-un{background:var(--surface);color:var(--amber)!important;border:1.5px dashed var(--amber-line)}
+.tile.f0{border:1.5px dashed var(--l0b)}
+.field{font:inherit;font-size:15px;line-height:22px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);color:var(--ink);resize:vertical;min-height:44px;width:100%}
+.field::placeholder{color:var(--muted)}
+.mbar{display:none}
+@media (max-width:760px){
+.wrap{padding-left:16px;padding-right:16px}.hide-sm{display:none!important}.show-sm{display:inline-flex!important}
+.lvgrid{grid-template-columns:minmax(0,1fr)}
+.lvl{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:2px;align-items:center}
+.lvl .lvtop{grid-row:1 / span 2}
+.lvl .desc{grid-column:2;font-size:14px;line-height:20px}
+.aside{display:none!important}
+.crit{padding:16px}
+.h1{font-size:26px!important;line-height:32px!important}
+.crithead{flex-wrap:wrap}
+.critmeta{flex-direction:row!important;gap:16px!important;width:100%;justify-content:flex-start!important;padding-left:32px}
+.mbar{display:flex;position:sticky;bottom:0;z-index:5}
+.mainpad{padding-bottom:16px!important}
+}
+@media (prefers-reduced-motion: reduce){.t{scroll-behavior:auto}.t *{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="{{rootCls}}" style="{{rootStyle}}">
+
+<div class="banner" role="region" aria-label="Demo"><div class="wrap in">
+<p><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8DB4EE" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg><strong>Private demo</strong><span aria-hidden="true" class="dim">·</span><span>signed in as Jane Smith (Jury)</span><span class="dim hide-sm">· resets at midnight, Paris time, in 9 h 28 min</span></p>
+<div style="display:flex;align-items:center;gap:4px"><a href="P2-Banner.dc.html">Switch role</a><button type="button">Reset my demo</button></div>
+</div></div>
+
+<header class="apphdr"><div class="wrap in">
+<div style="display:flex;align-items:center;gap:28px">
+<a href="#" class="logo" aria-label="Assay home"><svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="9" fill="none" stroke="currentColor" stroke-width="3.5"></rect><path d="M8 23h4.5v8H8zM14.5 19H19v12h-4.5zM21 15h4.5v16H21zM27.5 11H32v20h-4.5z" fill="currentColor"></path></svg><b>assay</b></a>
+<nav class="nav hide-sm" aria-label="Main"><a href="P3-MyTeams.dc.html" aria-current="page">My teams</a><a href="P7-Rubrics.dc.html">Rubrics</a><a href="P9-Schedule.dc.html">Schedule</a></nav>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<a href="P10-Notifications.dc.html" class="iconbtn" aria-label="Notifications, 2 unread"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V7a4 4 0 018 0v4l1.5 1.5h-11zM6.5 14h3"></path></svg><span class="badge" aria-hidden="true">2</span></a>
+<button type="button" class="avatar" aria-label="Account menu, Jane Smith">JS</button>
+<button type="button" class="iconbtn show-sm" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg></button>
+</div>
+</div></header>
+
+<main class="wrap mainpad" style="padding-top:28px;padding-bottom:80px;display:flex;flex-direction:column;gap:24px">
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<nav aria-label="Breadcrumb"><ol style="padding:0;list-style:none;display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap">
+<li><a href="P3-MyTeams.dc.html" style="display:inline-flex;align-items:center;min-height:32px">My teams</a></li><li aria-hidden="true" class="muted">/</li>
+<li><a href="#" style="display:inline-flex;align-items:center;min-height:32px">Team Beta</a></li><li aria-hidden="true" class="muted">/</li>
+<li aria-current="page" class="ink2">Final report</li>
+</ol></nav>
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<h1 class="h1" style="font-size:36px;line-height:44px;font-weight:600;letter-spacing:-0.02em">Final report · Team Beta</h1>
+<p class="ink2" style="font-size:17px;line-height:25px">Clinic queue management with SMS notifications</p>
+</div>
+<a href="P7-Rubrics.dc.html" class="btn btn-ghost hide-sm"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="1.5"></rect><path d="M2 6.5h12M6 6.5v7"></path></svg>Full rubric</a>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<sc-if value="{{notSubmitted}}" hint-placeholder-val="{{ true }}"><span class="chip c-draft"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>Draft</span></sc-if>
+<sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}"><span class="chip c-sub"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg>Submitted</span></sc-if>
+<span class="chip c-plain"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"></rect><path d="M2 6.5h12M5 1.5v3M11 1.5v3"></path></svg>Due Fri 12 Jun · in 2 days</span>
+<span class="chip c-plain">Jury · 13 criteria</span>
+<span class="chip c-plain"><span class="mono" style="font-weight:600">30%</span> of final grade</span>
+<span class="chip c-plain show-sm">Jury: {{juryCount}} of 3 submitted</span>
+</div>
+<p class="ink2" style="max-width:860px">For each criterion, pick the description that best matches the report. Tab moves between criteria, arrow keys move between levels. Your draft saves as you go.</p>
+</div>
+
+<sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:12px;background:var(--green-soft);color:var(--green)">
+<svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" style="flex:none"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg>
+<span><strong>Submitted Wed 10 Jun 2026, 14:32.</strong> This evaluation is locked and can't be changed.</span>
+</div>
+</sc-if>
+
+<div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+<div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<sc-for list="{{criteria}}" as="c" hint-placeholder-count="13">
+<section id="{{c.id}}" class="{{c.cardCls}}" aria-labelledby="{{c.nameId}}">
+<div class="crithead" style="display:flex;gap:16px;align-items:flex-start">
+<span class="mono muted" style="flex:none;font-size:14px;font-weight:600;line-height:25px">{{c.num}}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+<h2 id="{{c.nameId}}" style="font-size:17px;line-height:25px;font-weight:600;overflow-wrap:anywhere;max-width:760px">{{c.t}}</h2>
+<sc-if value="{{c.unscored}}" hint-placeholder-val="{{ false }}"><span class="chip c-over" style="align-self:flex-start"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5" stroke-dasharray="2.5 2"></circle></svg>Not scored yet</span></sc-if>
+</div>
+<div class="critmeta muted" style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:13px">
+<span>Weight <span class="mono" style="font-weight:600;color:var(--ink)">{{c.w}}%</span></span>
+<span><span class="mono" style="font-weight:600;font-size:15px;color:var(--ink)">{{c.pts}}</span> / {{c.w}} pts</span>
+</div>
+</div>
+<div role="radiogroup" aria-labelledby="{{c.nameId}}" class="lvgrid">
+<sc-for list="{{c.levels}}" as="l" hint-placeholder-count="5">
+<label class="{{l.cls}}">
+<input class="sr" type="radio" name="{{c.id}}" value="{{l.v}}" checked="{{l.on}}" onChange="{{l.pick}}" disabled="{{l.locked}}">
+<span class="lvtop" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+<span style="display:inline-flex;align-items:center;gap:8px"><span class="lvb" aria-hidden="true"><sc-for list="{{l.bars}}" as="b"><i class="{{b.c}}"></i></sc-for></span><span class="mono" style="font-size:15px;font-weight:600">{{l.v}}</span></span>
+<span class="tick hide-sm" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--tk)"><path d="M3 8.5l3 3 7-7"></path></svg></span>
+</span>
+<span style="font-size:14px;line-height:19px;font-weight:600">{{l.name}}</span>
+<span class="desc">{{l.desc}}</span>
+</label>
+</sc-for>
+</div>
+<sc-if value="{{c.showCom}}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="{{c.comId}}" style="font-size:14px;font-weight:600">Comment for the team <span class="muted" style="font-weight:400">· optional, students see it once results are released</span></label>
+<textarea id="{{c.comId}}" class="field" rows="2" value="{{c.comment}}" onChange="{{c.onComment}}" readOnly="{{c.locked}}" placeholder="What should the team keep, or fix first?"></textarea>
+</div>
+</sc-if>
+<sc-if value="{{c.canAddCom}}" hint-placeholder-val="{{ true }}">
+<button type="button" class="btn btn-quiet" onClick="{{c.openCom}}" style="align-self:flex-start;border:1px dashed var(--line2);font-size:14px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>Add a comment</button>
+</sc-if>
+</section>
+</sc-for>
+
+<section class="card" aria-labelledby="overall-h" style="padding:24px;display:flex;flex-direction:column;gap:10px">
+<h2 id="overall-h" style="font-size:17px;font-weight:600"><label for="overall">Overall comment</label></h2>
+<p class="muted" style="font-size:14px">Optional. Shown to Team Beta with the results.</p>
+<textarea id="overall" class="field" rows="4" value="{{overall}}" onChange="{{onOverall}}" readOnly="{{submitted}}" placeholder="A short summary for the team: main strengths, and the one thing to fix first."></textarea>
+</section>
+</div>
+
+<aside class="aside" aria-label="Score and submission" style="flex:1 1 340px;min-width:0;position:sticky;top:16px;align-self:flex-start;max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:16px">
+<section class="card" aria-labelledby="score-h" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 id="score-h" class="ink2" style="font-size:15px;font-weight:600">Your score</h2><span class="muted" style="font-size:13px">updates live</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<p style="display:flex;align-items:baseline;gap:6px" aria-live="polite"><span class="mono" style="font-size:56px;line-height:56px;font-weight:600;letter-spacing:-0.03em">{{score}}</span><span class="mono muted" style="font-size:16px">/ 100</span></p>
+<span class="{{bandCls}}"><span class="lvb" aria-hidden="true"><sc-for list="{{bandBars}}" as="b"><i class="{{b.c}}"></i></sc-for></span>{{bandName}}</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span class="ink2" style="font-size:14px"><strong class="mono">{{scoredCount}}</strong> of 13 criteria scored</span>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">
+<sc-for list="{{tiles}}" as="t" hint-placeholder-count="13">
+<a href="#{{t.id}}" class="{{t.cls}}" aria-label="{{t.aria}}"><span style="font-size:10px;line-height:12px;opacity:.85">{{t.n}}</span><span class="mono" style="font-size:15px;line-height:18px;font-weight:600">{{t.lv}}</span></a>
+</sc-for>
+</div>
+<span class="muted" style="font-size:13px;line-height:19px">Each tile is one criterion and its level. Unscored criteria count as 0 until you pick a level.</span>
+</div>
+</section>
+
+<section class="card" aria-label="Submit" style="padding:24px;display:flex;flex-direction:column;gap:14px">
+<p role="status" class="ink2" style="display:flex;align-items:center;gap:8px;font-size:14px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--green)"><path d="M3 8.5l3 3 7-7"></path></svg>{{savedText}}</p>
+<sc-if value="{{showSubmit}}" hint-placeholder-val="{{ true }}">
+<button type="button" class="btn btn-pri" onClick="{{onSubmit}}" aria-disabled="{{notReady}}" style="width:100%;min-height:48px;font-size:16px">Submit evaluation</button>
+</sc-if>
+<sc-if value="{{showHelp}}" hint-placeholder-val="{{ true }}">
+<p style="font-size:14px;line-height:21px;color:var(--amber);display:flex;flex-direction:column;gap:2px"><span>Score {{remaining}} more criteria to submit.</span><a href="#{{nextId}}" style="display:inline-flex;align-items:center;min-height:32px;font-weight:600">Go to criterion {{nextN}}</a></p>
+</sc-if>
+<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+<div role="alertdialog" aria-labelledby="confirm-h" aria-describedby="confirm-d" style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:12px;border:2px solid var(--sel);background:var(--pri-soft)">
+<h3 id="confirm-h" style="font-size:16px;font-weight:600">Submit with a score of {{score}}?</h3>
+<p id="confirm-d" style="font-size:14px;line-height:21px">Submitting locks this evaluation. You won't be able to change it.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" class="btn btn-pri" onClick="{{onConfirm}}" style="flex:1 1 auto">Submit and lock</button>
+<button type="button" class="btn btn-ghost" onClick="{{onCancel}}" style="flex:1 1 auto">Keep editing</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
+<p style="font-size:14px;line-height:21px;color:var(--green)"><strong>Submitted 10 Jun, 14:32.</strong> Locked for good. Team Beta's final report grade is now final, and Rania sees it on her grid.</p>
+</sc-if>
+</section>
+
+<section class="card" aria-labelledby="ctx-h" style="padding:24px;display:flex;flex-direction:column;gap:14px">
+<h2 id="ctx-h" class="ink2" style="font-size:15px;font-weight:600">Team Beta jury · {{juryCount}} of 3 submitted</h2>
+<ul style="padding:0;list-style:none;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{reviewers}}" as="r" hint-placeholder-count="3">
+<li style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px"><span style="font-weight:500">{{r.n}}</span><span class="{{r.cls}}">{{r.s}}</span></li>
+</sc-for>
+</ul>
+<p class="muted" style="font-size:13px;line-height:19px;border-top:1px solid var(--line);padding-top:12px">The team's final report grade is the plain average of the three jury scores and counts for 30% of Team Beta's final grade. Other reviewers' scores stay hidden while you grade.</p>
+</section>
+</aside>
+</div>
+</main>
+
+<div class="mbar" role="region" aria-label="Score and submission" style="flex-direction:column;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.08)">
+<sc-if value="{{notConfirming}}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<span style="display:flex;align-items:baseline;gap:6px" aria-live="polite"><span class="mono" style="font-size:28px;line-height:32px;font-weight:600">{{score}}</span><span class="mono muted" style="font-size:13px">/ 100</span><span class="{{bandCls}}" style="height:24px;padding:0 6px;margin-left:4px"><span class="lvb" aria-hidden="true"><sc-for list="{{bandBars}}" as="b"><i class="{{b.c}}"></i></sc-for></span>{{bandShort}}</span></span>
+<span class="muted" style="font-size:13px">{{scoredCount}} of 13 scored · {{savedShort}}</span>
+</div>
+<sc-if value="{{notSubmitted}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-pri" onClick="{{onSubmit}}" aria-disabled="{{notReady}}">Submit</button></sc-if>
+<sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}"><span class="chip c-sub">Locked</span></sc-if>
+</div>
+<sc-if value="{{showHelp}}" hint-placeholder-val="{{ true }}"><a href="#{{nextId}}" style="font-size:14px;font-weight:600;color:var(--amber);display:inline-flex;align-items:center;min-height:32px">{{remaining}} left to score · go to criterion {{nextN}}</a></sc-if>
+</sc-if>
+<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+<div role="alertdialog" aria-labelledby="mconfirm-h" aria-describedby="mconfirm-d" style="display:flex;flex-direction:column;gap:10px">
+<h3 id="mconfirm-h" style="font-size:17px;font-weight:600">Submit with a score of {{score}}?</h3>
+<p id="mconfirm-d" style="font-size:15px;line-height:22px">Submitting locks this evaluation. You won't be able to change it.</p>
+<button type="button" class="btn btn-pri" onClick="{{onConfirm}}">Submit and lock</button>
+<button type="button" class="btn btn-ghost" onClick="{{onCancel}}">Keep editing</button>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"state":{"editor":"enum","options":["draft","confirm","submitted"],"default":"draft"},"$preview":{"width":375,"height":812}}'>
+var CFG = { theme: 'light', device: 'phone', state: 'draft' };
+var LV = [
+  { v: 4, n: 'Exemplary' }, { v: 3, n: 'Accomplished' }, { v: 2, n: 'Developing' }, { v: 1, n: 'Beginning' }, { v: 0, n: 'Not demonstrated' }
+];
+var CR = [
+  { t: 'Project objectives / Outcomes', w: 10, d: ['All objectives are stated clearly and measurably, and each outcome is justified and traced to the results achieved.', 'The main objectives and outcomes are stated clearly, with partial justification.', 'Objectives are stated vaguely, or several outcomes are missing.', 'Objectives and outcomes are barely stated or unclear.'] },
+  { t: 'Background research / Related works', w: 10, d: ['Recent, relevant works are critically compared, and the gap the project fills is clearly identified.', 'Relevant works are described and related to the project, with limited comparison.', 'Few works are cited, or they are described without relating them to the project.', 'Little or no background research is presented.'] },
+  { t: 'Develop functional requirements by analyzing desired needs (2.1)', w: 10, d: ['Functional requirements are complete, testable and clearly derived from an analysis of user needs.', 'The main functional requirements are identified and mostly testable.', 'Requirements are incomplete or not clearly linked to needs.', 'Requirements are missing or listed without analysis.'] },
+  { t: 'Develop technical and non-technical constraints (2.2)', w: 10, d: ['Technical and non-technical constraints (cost, time, ethics, regulations) are fully identified and quantified where possible.', 'The main technical and non-technical constraints are identified.', 'Only technical constraints, or only a few constraints, are identified.', 'Constraints are barely mentioned.'] },
+  { t: 'Problem formulation', w: 10, d: ['The problem is formulated precisely, with scope, assumptions and success criteria.', 'The problem is formulated clearly, with minor gaps in scope or success criteria.', 'The problem formulation is partial or ambiguous.', 'The problem is not clearly formulated.'] },
+  { t: 'Incorporate appropriate engineering standards and specifications related to the engineering design (2.3)', w: 10, d: ['Relevant standards are identified, cited and explicitly applied in the design.', 'Relevant standards are identified and partly applied.', 'Standards are mentioned but not applied, or are only partly relevant.', 'Standards are not considered.'] },
+  { t: 'Propose multiple solutions and evaluate them against functional requirements and constraints (2.4)', w: 10, d: ['Several credible alternatives are evaluated systematically (e.g. with a decision matrix) against requirements and constraints.', 'At least two alternatives are compared against the main requirements.', 'Alternatives are mentioned without a structured evaluation.', 'A single solution is presented with no alternatives.'] },
+  { t: 'Implement, test and iteratively improve a solution satisfying the specified functional requirements and constraints, considering risks, and making trade-offs (2.5)', w: 5, d: ['The solution is fully implemented, tested against the requirements, and improved over iterations, with risks and trade-offs documented.', 'The solution is implemented and tested against most requirements, with some iteration.', 'The implementation is partial or only lightly tested.', 'The implementation is minimal or untested.'] },
+  { t: 'Results presentation and analysis', w: 5, d: ['Results are presented clearly with appropriate figures, analysed critically, and compared with the objectives.', 'Results are presented clearly with some analysis.', 'Results are presented with little analysis.', 'Results are missing or unclear.'] },
+  { t: 'Conclusion and perspectives', w: 5, d: ['The conclusion summarises the achievements against the objectives, discusses limitations, and proposes concrete future work.', 'The conclusion summarises the achievements and mentions future work.', 'The conclusion is generic, with little reflection.', 'The conclusion is missing or unrelated to the work.'] },
+  { t: 'Make informed judgments by considering the impact of engineering solutions in global, economic, environmental and societal contexts (4.2)', w: 5, d: ['Impacts in all four contexts are analysed and influence design decisions.', 'Impacts in several contexts are discussed.', 'Impacts are mentioned briefly.', 'Impacts are not considered.'] },
+  { t: 'Demonstrate written communication skills with a range of audiences by writing adequate documents using appropriate format and language (3.1)', w: 5, d: ['The report is well structured, clear and nearly error-free, and follows the required template.', 'The report is clear and well structured, with minor errors.', 'The structure is inconsistent or there are frequent language errors.', 'The report is hard to follow and the template is not respected.'] },
+  { t: 'Scientific referencing', w: 5, d: ['All sources are cited consistently in a standard style, and the references are recent and relevant.', 'Sources are cited with minor inconsistencies.', 'Citations are incomplete or inconsistent.', 'Sources are missing or not cited.'] }
+];
+var COM = ['', '', 'Requirements trace cleanly to the interviews with clinic staff.', 'Cost and time are covered, but nothing on patient-data privacy, which matters for an SMS system.', '', 'GSM and SMS-gateway standards are cited but never shown shaping the design.', '', '', '', '', '', 'Chapter 4 repeats chapter 2; figures lack captions.', ''];
+var PRESET = {
+  draft: { sel: [3, 3, 4, 2, 3, 2, 3, null, null, null, null, 3, null], confirming: false, submitted: false },
+  confirm: { sel: [3, 3, 4, 2, 3, 2, 3, 3, 3, 3, 2, 3, 3], confirming: true, submitted: false },
+  submitted: { sel: [3, 3, 4, 2, 3, 2, 3, 3, 3, 3, 2, 3, 3], confirming: false, submitted: true }
+};
+function bars(v) { return [0, 1, 2, 3].map(function (i) { return { c: i < v ? '' : 'o' }; }); }
+function bandOf(s) { return s < 12.5 ? 0 : s < 37.5 ? 1 : s < 62.5 ? 2 : s < 87.5 ? 3 : 4; }
+class Component extends DCLogic {
+  st() {
+    var p = PRESET[this.props.state ?? CFG.state] || PRESET.draft;
+    return Object.assign({ com: COM, open: [], overall: '', saved: '2 min ago', missing: false }, p, this.state || {});
+  }
+  renderVals() {
+    var self = this;
+    var s = this.st();
+    var theme = this.props.theme ?? CFG.theme;
+    var phone = CFG.device === 'phone';
+    var locked = !!s.submitted;
+    var total = 0, scored = 0, nextIdx = -1;
+    var criteria = CR.map(function (c, i) {
+      var v = s.sel[i];
+      var has = v !== null && v !== undefined;
+      if (has) { total += v * c.w; scored++; } else if (nextIdx < 0) { nextIdx = i; }
+      var comment = s.com[i] || '';
+      var showCom = comment.length > 0 || s.open.indexOf(i) >= 0;
+      return {
+        id: 'c' + (i + 1), nameId: 'c' + (i + 1) + '-name', comId: 'c' + (i + 1) + '-com',
+        num: (i < 9 ? '0' : '') + (i + 1), t: c.t, w: c.w,
+        pts: has ? (v * c.w / 4).toFixed(1) : '–',
+        unscored: !has,
+        cardCls: 'crit' + (!has ? (s.missing ? ' unscored missing' : ' unscored') : ''),
+        comment: comment, showCom: showCom, canAddCom: !showCom && !locked, locked: locked,
+        onComment: function (e) { var com = self.st().com.slice(); com[i] = e.target.value; self.setState({ com: com, saved: 'just now' }); },
+        openCom: function () { var o = self.st().open.slice(); o.push(i); self.setState({ open: o }); },
+        levels: LV.map(function (l) {
+          var on = v === l.v;
+          return {
+            v: l.v, name: l.n, on: on, locked: locked,
+            desc: l.v === 0 ? 'Not addressed.' : c.d[4 - l.v],
+            cls: 'lvl lv' + l.v + (on ? ' on' : ''),
+            bars: bars(l.v),
+            pick: function () {
+              var cur = self.st();
+              if (cur.submitted) return;
+              var sel = cur.sel.slice(); sel[i] = l.v;
+              self.setState({ sel: sel, saved: 'just now', confirming: false });
+            }
+          };
+        })
+      };
+    });
+    var scoreN = total / 4;
+    var band = bandOf(scoreN);
+    var remaining = CR.length - scored;
+    var notReady = remaining > 0;
+    var tiles = CR.map(function (c, i) {
+      var v = s.sel[i];
+      var has = v !== null && v !== undefined;
+      return {
+        id: 'c' + (i + 1), n: '#' + (i + 1), lv: has ? String(v) : '–',
+        cls: 'tile ' + (has ? 'f' + v : 'tile-un'),
+        aria: 'Criterion ' + (i + 1) + ', ' + c.t + ': ' + (has ? LV[4 - v].n + ', level ' + v : 'not scored')
+      };
+    });
+    var reviewers = [
+      { n: 'John Doe', s: 'Submitted 8 Jun', cls: 'chip c-sub' },
+      { n: 'Michael Johnson', s: 'Submitted 9 Jun', cls: 'chip c-sub' },
+      { n: 'Jane Smith (you)', s: locked ? 'Submitted today' : 'Draft', cls: locked ? 'chip c-sub' : 'chip c-draft' }
+    ];
+    var confirming = !!s.confirming && !locked;
+    return {
+      rootCls: 't' + (theme === 'dark' ? ' dark' : '') + (locked ? ' locked' : ''),
+      rootStyle: phone ? 'height:812px;min-height:0;overflow-y:auto' : '',
+      criteria: criteria, tiles: tiles,
+      score: scoreN.toFixed(1), scoredCount: scored, remaining: remaining,
+      bandName: LV[4 - band].n + ' band', bandShort: String(band), bandCls: 'lvchip f' + band, bandBars: bars(band),
+      notReady: notReady,
+      submitted: locked, notSubmitted: !locked, confirming: confirming, notConfirming: !confirming,
+      showSubmit: !locked && !confirming,
+      showHelp: !locked && notReady,
+      nextId: nextIdx >= 0 ? 'c' + (nextIdx + 1) : 'c1', nextN: nextIdx + 1,
+      savedText: locked ? 'Submitted and locked' : 'Draft saved ' + s.saved,
+      savedShort: locked ? 'locked' : 'saved ' + s.saved,
+      juryCount: locked ? 3 : 2, reviewers: reviewers,
+      overall: s.overall,
+      onOverall: function (e) { self.setState({ overall: e.target.value, saved: 'just now' }); },
+      onSubmit: function () {
+        if (notReady) {
+          self.setState({ missing: true });
+          var el = document.getElementById('c' + (nextIdx + 1));
+          if (el) el.scrollIntoView({ block: 'start' });
+          return;
+        }
+        self.setState({ confirming: true });
+      },
+      onConfirm: function () { self.setState({ confirming: false, submitted: true }); },
+      onCancel: function () { self.setState({ confirming: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

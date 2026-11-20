@@ -56,9 +56,11 @@ jobs:
               image = s.get("image", "")
               if not image.startswith("ghcr.io/firaskhalife/") and ("@sha256:" not in image or ":latest" in image):
                   problems.append(f"{name}: third-party image {image} isn't pinned to a version and digest")
-              # The derived third-party images built here carry their base's version as the tag.
+              # The derived third-party images built here carry their base's version as the tag, and a digest.
               for derived in ("postgres", "mongo"):
                   if image.startswith(f"ghcr.io/firaskhalife/fyp-grading-{derived}:"):
+                      if not re.search(r"@sha256:[0-9a-f]{64}$", image):
+                          problems.append(f"{name}: {image} isn't pinned to a digest")
                       base = re.search(r"^FROM [^:\s]+:([^@\s]+)", open(f"../config/{derived}/Dockerfile").read(), re.M)
                       if image.split(":")[1].split("@")[0] != base.group(1):
                           problems.append(f"{name}: {image} doesn't match config/{derived}/Dockerfile ({base.group(1)})")
@@ -252,24 +254,28 @@ jobs:
         if: env.PUSH == 'true'
         run: cosign sign --yes "$IMAGE@${{ steps.push.outputs.digest }}"
 
-  # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks
-  # and the security checks against its edge on http://localhost:8080. The services, the gateway and the frontend come
-  # from GHCR (latest); the three images this repo builds are built from this checkout first, so a pull request tests
-  # its own realm, theme and database images. On pull requests and nightly (new service images land every day).
+  # The production compose started the way a visitor would (./run-demo.sh), then the smoke test, the API rule checks,
+  # the security checks, the persona reset script and the frontend's Playwright real-stack suite against its edge on
+  # http://localhost:8080. The services, the gateway and the frontend come from GHCR (latest); the three images this
+  # repo builds are built from this checkout instead, so a pull request tests its own realm, theme and database images.
+  # On pull requests and nightly (new service images land every day).
   integration:
     name: Production stack end to end
     needs: validate
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
     runs-on: ubuntu-latest   # 4 vCPUs and 16 GB for public repositories; the stack's limits add up to 5.4 GiB
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PROD: docker-compose/prod
       EDGE: http://localhost:8080
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # The compose pins the published database images by digest, which a local build can't match: in this throwaway
+      # checkout, drop those two digests so the stack runs what this checkout's Dockerfiles build.
       - name: Build this repository's images (Keycloak, Postgres, MongoDB)
         run: |
+          sed -i -E 's#(ghcr\.io/firaskhalife/fyp-grading-(postgres|mongo):[^@[:space:]]+)@sha256:[0-9a-f]{64}#\1#' "$PROD/compose.yml"
           sed 's/=$/=ci-placeholder/' "$PROD/.env.example" > "$RUNNER_TEMP/prod.env"
           docker compose --project-directory "$PROD" -f "$PROD/compose.yml" --env-file "$RUNNER_TEMP/prod.env" \
             config --images | sort -u > "$RUNNER_TEMP/images"
@@ -307,6 +313,45 @@ jobs:
 
       - name: Security checks
         run: APP_ORIGIN="$EDGE" COMPOSE_PROJECT_NAME=assay e2e/security.sh "$EDGE" "$EDGE"
+
+      # The host's nightly cron runs it; here it must work on the read-only container with its defaults.
+      - name: The persona reset script works on the production Keycloak
+        run: scripts/keycloak-reset-personas.sh
+
+      # The frontend's own end-to-end suite in a real browser against this stack's edge (fyp-grading-frontend master,
+      # playwright.real.config.ts). Every test makes its own demo copy, so the gateway's copy limit is lifted first:
+      # the checks above ran with the production limit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {repository: FirasKhalife/fyp-grading-frontend, ref: master, path: frontend}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Playwright and Chromium
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Lift the demo-copy limit for Playwright
+        run: |
+          echo 'GATEWAY_COPY_RATE=600' >> "$PROD/.env"
+          docker compose --project-directory "$PROD" -f "$PROD/compose.yml" up -d --wait --wait-timeout 300 api-gateway
+
+      - name: Playwright real-stack suite
+        working-directory: frontend
+        env:
+          ASSAY_BASE_URL: ${{ env.EDGE }}
+          PW_CHANNEL: chromium   # Playwright's own Chromium, installed above
+        run: npx playwright test -c playwright.real.config.ts
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure() && hashFiles('frontend/playwright-report/**') != ''
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
 
       - name: Memory after the checks
         if: always()

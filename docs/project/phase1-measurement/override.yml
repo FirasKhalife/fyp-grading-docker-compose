@@ -1,0 +1,101 @@
+# Measurement-only override (phase 1). Not committed anywhere.
+x-spring-build: &df |
+  FROM maven:3.8.5-openjdk-17 AS build
+  WORKDIR /app
+  COPY pom.xml .
+  COPY src src
+  RUN --mount=type=cache,target=/root/.m2 mvn -q -B clean package -DskipTests
+  FROM eclipse-temurin:17-jre
+  RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+  WORKDIR /app
+  COPY --from=build /app/target/*.jar /app/app.jar
+  ENTRYPOINT ["sh","-c","exec java $$JAVA_OPTS -jar app.jar"]
+services:
+  registry-server:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-registry-server"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  config-server:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-config-server"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  api-gateway:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-api-gateway"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  admin-service:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-admin-service"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+    depends_on:
+      keycloak-server: {condition: service_healthy}
+  evaluation-service:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-evaluation-service"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  notification-service:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-notification-service"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  rubric-service:
+    build:
+      context: "/mnt/c/src/0. personal/fyp-grading/fyp-grading-rubric-service"
+      dockerfile_inline: *df
+      network: host
+    environment:
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://registry-server:8761/eureka/"}}}}'
+      - JAVA_OPTS=${JAVA_OPTS:-}
+  admin-db: {image: "postgres:16"}
+  notification-db: {image: "postgres:16"}
+  rubric-db: {image: "postgres:16"}
+  keycloak-db: {image: "postgres:16"}
+  mongodb:
+    image: "mongo:7"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok' | grep 1"]
+  keycloak-server:
+    build: {network: host}
+    environment:
+      - KC_HOSTNAME=http://keycloak-server:8080
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /realms/master/.well-known/openid-configuration HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+  frontend:
+    build: {network: host}
+  minio:
+    image: "chainguard/minio:latest-dev"
+    healthcheck: {disable: true}
+  redis:
+    ports: !reset []
+  gateway:
+    ports: !reset []
+  grafana:
+    volumes: !override
+      - "/mnt/c/src/0. personal/fyp-grading/fyp-grading-docker-compose/docker-compose/config/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro"

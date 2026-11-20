@@ -37,9 +37,12 @@ docker compose up -d --wait   # add --profile tunnel to run cloudflared in the s
   small `tmpfs` mounts or the named volumes), `cap_drop: [ALL]` and `no-new-privileges`. The databases start as their
   own users (`user:` in compose), so the root-to-user switch (`gosu`) isn't needed, and the derived database images
   don't have it.
-- **Pinned.** Third-party images are pinned to an exact version and digest (`redis:8.4.8-alpine@sha256:…`).
+- **Pinned.** Third-party images, and the derived database images, are pinned to an exact version and digest
+  (`redis:8.4.8-alpine@sha256:…`, `fyp-grading-postgres:16.16-alpine3.24@sha256:…`); CI fails on one that isn't.
   Dependabot (`docker-compose` ecosystem) proposes updates weekly, and bumps the derived images' bases within their
-  major version (a new major can't open the existing volumes without a migration).
+  major version (a new major can't open the existing volumes without a migration). A derived image update is two
+  steps: Dependabot bumps the `FROM` in `config/postgres` or `config/mongo`, `master` CI publishes the new version
+  tag, and Dependabot then proposes its tag and digest for `prod/compose.yml`.
 
 ## 2. One way in: the edge
 
@@ -53,8 +56,8 @@ Cloudflare ── tunnel ── cloudflared ──► edge (nginx, 127.0.0.1:808
   Keycloak's sign-in pages share one origin (`PUBLIC_URL`): no CORS, and one public hostname in Cloudflare.
 - **Only the edge publishes a port**, and only on `127.0.0.1` (`EDGE_PORT`, default 8080): for cloudflared installed
   on the host, and for checks over SSH. Docker's port rules bypass ufw, so nothing binds to a public interface. With
-  `--profile tunnel`, cloudflared runs in the stack and reaches the edge as `edge:80`; route the tunnel's public
-  hostname to `http://edge:80` (or `http://localhost:8080` for a cloudflared on the host).
+  `--profile tunnel`, cloudflared runs in the stack and reaches the edge as `edge:8080`; route the tunnel's public
+  hostname to `http://edge:8080` (or `http://localhost:8080` for a cloudflared on the host).
 - **Never routed:** Keycloak's admin console and admin API (`/admin`), every other realm (`/realms/master`), the
   management ports, Eureka, the config server and the services' actuators. The edge answers those paths with a plain
   404. There is no RabbitMQ management UI in the image.
@@ -73,10 +76,12 @@ Cloudflare ── tunnel ── cloudflared ──► edge (nginx, 127.0.0.1:808
 
    The admin console isn't published. Administer through `docker exec` and `kcadm.sh`, as the script below does.
 3. **Every deploy that changes the realm, and nightly (cron):** run
-   `ASSAY_SPA_ORIGIN=https://… scripts/keycloak-reset-personas.sh assay-keycloak-server-1`. A realm import never
-   updates an existing realm, so this script applies the realm settings to the running Keycloak. Its admin login
-   defaults to `admin/admin`, so in production also set `KEYCLOAK_ADMIN_USER` / `KEYCLOAK_ADMIN_PASSWORD` to the
-   permanent admin. It:
+   `scripts/keycloak-reset-personas.sh` (it finds the running `keycloak-server` container, e.g.
+   `assay-keycloak-server-1`; or pass its name). A realm import never updates an existing realm, so this script
+   applies the realm settings to the running Keycloak. Its admin login defaults to the container's bootstrap admin,
+   so once that is replaced (step 2) set `KEYCLOAK_ADMIN_USER` / `KEYCLOAK_ADMIN_PASSWORD` to the permanent admin.
+   The SPA origin defaults to the container's `ASSAY_SPA_ORIGIN` (the `PUBLIC_URL`). kcadm.sh keeps its session in
+   `/tmp` (the container's root is read-only). CI runs it against the production stack on every pull request. It:
    - disables every required action, so visitors can't trigger a password change or 2FA setup on a shared persona
      through `kc_action`
    - turns brute-force lockout off

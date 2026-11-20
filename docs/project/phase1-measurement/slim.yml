@@ -1,0 +1,33 @@
+# Slim demo profile (measurement). Use with: EXTRA_FILES=slim.yml, JAVA_OPTS exported, and an explicit service list
+services:
+  admin-db:   # the single shared Postgres (admin, notification, rubric, keycloak DBs)
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=60"]
+    volumes: !override
+      - demo-pg-data:/var/lib/postgresql/data
+      - "/mnt/c/src/0. personal/fyp-grading/phase1-measurement/initdb.sh:/docker-entrypoint-initdb.d/10-dbs.sh:ro"
+  mongodb:
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+  rabbitmq:
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "+sbwt none +sbwtdcpu none +sbwtdio none"
+  keycloak-server:
+    environment:
+      - KC_DB_URL=jdbc:postgresql://admin-db:5432/keycloak-db
+      - KC_CACHE=local
+      - JAVA_OPTS_KC_HEAP=-Xms64m -Xmx320m -XX:MaxMetaspaceSize=192m
+    depends_on: !override
+      admin-db: {condition: service_healthy}
+    deploy: {resources: {limits: {memory: 640m}}}
+  # The JVM memory limits now come from the compose files (review H5: admin 512m, notification 448m, ...).
+  notification-service:
+    environment: [DATABASE_URL=jdbc:postgresql://admin-db:5432/notification-db]
+    depends_on: !override
+      config-server: {condition: service_healthy}
+      admin-db: {condition: service_healthy}
+  rubric-service:
+    environment: [DATABASE_URL=jdbc:postgresql://admin-db:5432/rubric-db]
+    depends_on: !override
+      config-server: {condition: service_healthy}
+      admin-db: {condition: service_healthy}
+volumes:
+  demo-pg-data: {name: demo-pg-data}

@@ -78,5 +78,5 @@ design's numbers through the real grade maths.
 
 ## API contract
 
-The SPA and the services share one OpenAPI 3.1 contract (`contract/openapi.yaml` in the workspace). Each service also
+The SPA and the services share one OpenAPI 3.1 contract ([`contract/openapi.yaml`](../contract/openapi.yaml) in this repo). Each service also
 publishes its own document, aggregated by the gateway at `/swagger-ui.html`.

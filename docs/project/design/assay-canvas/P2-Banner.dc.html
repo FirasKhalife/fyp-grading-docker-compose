@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Demo banner states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t{--paper:#F6F5F1;--surface:#FFFFFF;--raised:#F1F0EB;--line:#D9D6CC;--line2:#B9B6AC;--ink:#1B1F24;--ink2:#3B424C;--muted:#545B66;--pri:#1F4E8C;--pri-h:#163A69;--on-pri:#FFFFFF;--pri-soft:#EEF3FA;--green:#1D6A4C;--green-soft:#E3F1EA;--banner:#1B1F24;--banner-ink:#E7E9EC;--banner-muted:#C3C8D0;--l4:#1F3F70;--l3:#44699F;--l2:#A9BEDD;--l1:#DCE5F2;--sel:#1F4E8C}
+.t{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:22px}
+.t *{box-sizing:border-box}
+.t h1,.t h2,.t h3,.t p,.t ul{margin:0}
+.t a{color:var(--pri)}
+.t :focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.muted{color:var(--muted)}.ink2{color:var(--ink2)}
+.lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted);padding:0 64px 8px}
+.banner{background:var(--banner);color:var(--banner-ink);font-size:14px}
+.banner .in{max-width:1360px;margin:0 auto;padding:0 40px;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0 24px;flex-wrap:wrap}
+.banner p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0}
+.banner a,.banner .lnk{color:#FFFFFF;font-weight:600;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;background:transparent;border:0;font:inherit;font-weight:600;cursor:pointer}
+.banner .b{min-height:44px;padding:0 14px;border-radius:8px;border:1px solid #4A525E;background:transparent;color:#FFFFFF;font:inherit;font-weight:600;cursor:pointer}
+.banner .bw{min-height:44px;padding:0 12px;border-radius:8px;border:0;background:#FFFFFF;color:#1B1F24;font:inherit;font-weight:600;cursor:pointer}
+.banner .dim{color:var(--banner-muted)}
+.persona{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink)!important}
+.persona:hover{border-color:var(--pri)}
+.persona.cur{border:2px solid var(--pri);background:var(--pri-soft)}
+.av{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;font-weight:600;font-size:14px;flex:none}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid #4A525E;border-top-color:#FFFFFF;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.t *{animation:none!important}}
+</style>
+</helmet>
+<div class="t" style="width:1440px;min-height:900px;padding:48px 0;display:flex;flex-direction:column;gap:28px">
+<div style="padding:0 64px;display:flex;flex-direction:column;gap:6px">
+<span class="mono muted" style="font-size:13px">P2 · Demo banner and role switcher</span>
+<h1 style="font-size:32px;line-height:40px;font-weight:600">On every signed-in screen, above the app header</h1>
+<p class="ink2" style="max-width:860px">Dark strip so it never reads as part of the product. Reset confirms in place, in the banner itself: no modal. Switch role keeps the same private copy.</p>
+</div>
+
+<div><p class="lbl">1 · Default</p>
+<div class="banner" role="region" aria-label="Demo"><div class="in">
+<p><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8DB4EE" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg><strong>Private demo</strong><span aria-hidden="true" class="dim">·</span><span>signed in as Jane Smith (Jury)</span><span class="dim">· resets at midnight, Paris time, in 9 h 28 min</span></p>
+<div style="display:flex;align-items:center;gap:4px"><button type="button" class="lnk" onClick="{{openSwitch}}" aria-expanded="{{switching}}">Switch role</button><button type="button" class="b" onClick="{{askReset}}">Reset my demo</button></div>
+</div></div>
+<sc-if value="{{switching}}" hint-placeholder-val="{{ true }}">
+<div style="max-width:1360px;margin:0 auto;padding:0 40px"><div style="margin-top:8px;margin-left:auto;width:440px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(27,31,36,.18);padding:16px;display:flex;flex-direction:column;gap:10px" role="dialog" aria-label="Switch role">
+<p style="font-weight:600">Switch role</p>
+<p class="muted" style="font-size:13px;line-height:19px">Same private copy: anything you graded or released stays.</p>
+<a href="P5-Overview.dc.html" class="persona"><span class="av" style="background:var(--l4);color:#FFFFFF">RH</span><span style="display:flex;flex-direction:column"><strong>Rania Haddad</strong><span class="muted" style="font-size:13px">Coordinator · overview</span></span></a>
+<a href="P3-MyTeams.dc.html" class="persona cur" aria-current="true"><span class="av" style="background:var(--l3);color:#FFFFFF">JS</span><span style="display:flex;flex-direction:column"><strong>Jane Smith <span class="muted" style="font-weight:500">· current</span></strong><span class="muted" style="font-size:13px">Jury member · My teams</span></span></a>
+<a href="#" class="persona"><span class="av" style="background:var(--l2)">KN</span><span style="display:flex;flex-direction:column"><strong>Karim Nassar</strong><span class="muted" style="font-size:13px">Advisor · My teams</span></span></a>
+<a href="P11-Student.dc.html" class="persona"><span class="av" style="background:var(--l1)">NK</span><span style="display:flex;flex-direction:column"><strong>Nour Khoury</strong><span class="muted" style="font-size:13px">Student, Team Alpha · home</span></span></a>
+</div></div>
+</sc-if>
+</div>
+
+<div><p class="lbl">2 · Reset confirm, in place</p>
+<div class="banner" role="region" aria-label="Demo"><div class="in">
+<p role="alert"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F0A65E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2l6.5 11.5h-13zM8 6.5v3M8 11.5v.01"></path></svg><strong>Reset your demo?</strong><span>Everything you graded, released or changed in this copy is deleted, and you start again from the original demo data.</span></p>
+<div style="display:flex;align-items:center;gap:8px"><button type="button" class="lnk">Cancel</button><button type="button" class="bw">Reset my demo</button></div>
+</div></div>
+</div>
+
+<div><p class="lbl">3 · Resetting (a few seconds, then back to the role picker)</p>
+<div class="banner" role="region" aria-label="Demo"><div class="in">
+<p role="status"><span class="spin" aria-hidden="true"></span><strong>Creating a fresh copy of the demo data…</strong><span class="dim">This takes a few seconds.</span></p>
+<div></div>
+</div></div>
+</div>
+
+<div><p class="lbl">4 · After the nightly reset (midnight, Paris time)</p>
+<div class="banner" role="region" aria-label="Demo"><div class="in">
+<p role="status"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6FCB9F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3 3 7-7"></path></svg><strong>Your demo was reset overnight.</strong><span>You're on a fresh copy. Pick a role to continue.</span></p>
+<div><a href="P1-Landing.dc.html">Choose a role</a></div>
+</div></div>
+</div>
+
+<div style="padding:0 64px"><p class="muted" style="font-size:13px;line-height:19px;max-width:860px">On phones the banner keeps the first line ("Private demo · Jane Smith (Jury)") and the two actions; the reset time moves into the Switch role panel. Every control is at least 44 px tall.</p></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var s = Object.assign({ switching: true }, this.state || {});
+    return {
+      switching: s.switching,
+      openSwitch: function () { self.setState({ switching: !s.switching }); },
+      askReset: function () {}
+    };
+  }
+}
+</script>
+</body>
+</html>
