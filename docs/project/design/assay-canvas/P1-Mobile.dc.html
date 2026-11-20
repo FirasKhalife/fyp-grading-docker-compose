@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Assay demo landing, mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F4E8C}a:hover{color:#163A69}
+a:focus-visible,button:focus-visible{outline:3px solid #1F4E8C;outline-offset:3px}
+.cta{transition:background .15s}
+.cta:hover{background:#163A69;color:#FFFFFF}
+.ghost:hover{border-color:#1F4E8C;color:#1F4E8C}
+.persona{transition:border-color .15s}
+.persona:hover{border-color:#1F4E8C}
+@media (max-width:760px){.pw{padding-left:16px!important;padding-right:16px!important}.pm{padding-top:32px!important;gap:40px!important}h1.hero{font-size:32px!important;line-height:38px!important}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</helmet>
+<div style="background:#F6F5F1;color:#1B1F24;font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh">
+
+<header style="border-bottom:1px solid #D9D6CC;background:#FFFFFF">
+<div class="pw" style="max-width:1280px;margin:0 auto;padding:0 40px;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+<a href="#" style="display:flex;align-items:center;gap:8px;color:#1F3F70;text-decoration:none;min-height:44px" aria-label="Assay home">
+<svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="9" fill="none" stroke="currentColor" stroke-width="3.5"></rect><rect x="8" y="23" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="14.5" y="19" width="4.5" height="12" rx="1" fill="currentColor"></rect><rect x="21" y="15" width="4.5" height="16" rx="1" fill="currentColor"></rect><rect x="27.5" y="11" width="4.5" height="20" rx="1" fill="currentColor"></rect></svg>
+<span style="font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#1B1F24">assay</span>
+</a>
+<nav aria-label="Site" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<a href="#" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;font-size:15px;font-weight:500;text-decoration:none;color:#3B424C">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5"></path></svg>How it's built</a>
+<a href="#" class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid #D9D6CC;border-radius:10px;background:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;color:#1B1F24">Sign in with email</a>
+</nav>
+</div>
+</header>
+
+<main class="pw pm" style="max-width:1280px;margin:0 auto;padding:64px 40px 72px;display:flex;flex-direction:column;gap:56px">
+
+<section style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+<div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px">
+<span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#545B66">Final-year project grading · interactive portfolio demo</span>
+<h1 class="hero" style="margin:0;font-size:52px;line-height:58px;font-weight:600;letter-spacing:-0.02em;max-width:760px">A jury grades a final-year project against one rubric. Assay does the arithmetic and shows students why.</h1>
+<p style="margin:0;font-size:18px;line-height:28px;color:#3B424C;max-width:680px">Reviewers click the level description that matches the work. Assay weights each criterion, averages the reviewers into a team grade, tracks due dates and defenses, and releases results to students one assessment at a time.</p>
+</div>
+<aside aria-labelledby="path-h" style="flex:1 1 360px;min-width:0;background:#FFFFFF;border:1px solid #D9D6CC;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<h2 id="path-h" style="margin:0;font-size:16px;font-weight:600">Follow one grade in five minutes</h2>
+<ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px">
+<li style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start"><span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#1F3F70;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600">1</span><span style="font-size:15px;line-height:22px"><strong>As Jane, jury member:</strong> finish the final report draft for Team Beta and submit it.</span></li>
+<li style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start"><span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#44699F;color:#FFFFFF;font-family:'IBM Plex Mono',monospace;font-weight:600">2</span><span style="font-size:15px;line-height:22px"><strong>Switch to Rania, coordinator:</strong> watch Beta's cell turn from "2 of 3" into a grade, then release it.</span></li>
+<li style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start"><span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#A9BEDD;color:#1B1F24;font-family:'IBM Plex Mono',monospace;font-weight:600">3</span><span style="font-size:15px;line-height:22px"><strong>Switch to a student:</strong> read the grade criterion by criterion, with the jury's comments.</span></li>
+</ol>
+<p style="margin:0;font-size:13px;line-height:19px;color:#545B66">Switching role keeps your data, so your own submission follows you.</p>
+</aside>
+</section>
+
+<section aria-labelledby="roles-h" style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<h2 id="roles-h" style="margin:0;font-size:26px;font-weight:600">Choose a role to enter</h2>
+<p style="margin:0;display:flex;align-items:center;gap:8px;font-size:15px;color:#3B424C">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#1D6A4C" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg>
+You get a private copy of the demo data. It resets at midnight.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+
+<article class="persona" style="background:#FFFFFF;border:1px solid #D9D6CC;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:12px"><span aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:#1F3F70;color:#FFFFFF;font-weight:600;font-size:16px">RH</span><div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600;color:#1F4E8C">Coordinator</span><h3 style="margin:0;font-size:19px;font-weight:600">Rania Haddad</h3></div></div>
+<p style="margin:0;font-size:14px;line-height:21px;color:#545B66">Runs the session for 6 teams. Also sits on Team Gamma's jury.</p>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#3B424C">Try</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:21px">
+<li>Scan 6 teams × 5 assessments on one grid</li>
+<li>Release the Advisor assessment to the teams that are final</li>
+<li>Open Team Beta and compare its reviewers' scores</li>
+</ul></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<a href="P5-Overview.dc.html" class="cta" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:10px;background:#1F4E8C;color:#FFFFFF;font-weight:600;font-size:15px;text-decoration:none">Enter as Rania<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+<span style="font-size:13px;color:#545B66;text-align:center">Opens the coordinator overview</span>
+</div>
+</article>
+
+<article class="persona" style="background:#FFFFFF;border:1px solid #D9D6CC;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:12px"><span aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:#44699F;color:#FFFFFF;font-weight:600;font-size:16px">JS</span><div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600;color:#1F4E8C">Jury member</span><h3 style="margin:0;font-size:19px;font-weight:600">Jane Smith</h3></div></div>
+<p style="margin:0;font-size:14px;line-height:21px;color:#545B66">On the jury for 3 teams: one finished, one draft, one not started.</p>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#3B424C">Try</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:21px">
+<li>Finish the final report draft for Team Beta</li>
+<li>Watch the score move as you pick levels</li>
+<li>Submit, then switch to Rania to see it arrive</li>
+</ul></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<a href="P3-MyTeams.dc.html" class="cta" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:10px;background:#1F4E8C;color:#FFFFFF;font-weight:600;font-size:15px;text-decoration:none">Enter as Jane<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+<span style="font-size:13px;color:#545B66;text-align:center">Opens My teams, 1 draft waiting</span>
+</div>
+</article>
+
+<article class="persona" style="background:#FFFFFF;border:1px solid #D9D6CC;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:12px"><span aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:#A9BEDD;color:#1B1F24;font-weight:600;font-size:16px">KN</span><div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600;color:#1F4E8C">Advisor</span><h3 style="margin:0;font-size:19px;font-weight:600">Karim Nassar</h3></div></div>
+<p style="margin:0;font-size:14px;line-height:21px;color:#545B66">Advises Team Delta, whose advisor assessment is a draft and overdue.</p>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#3B424C">Try</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:21px">
+<li>Complete Team Delta's overdue advisor assessment</li>
+<li>Read the level descriptions in the rubric</li>
+<li>Check your defense days, 9–11 June</li>
+</ul></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<a href="#" class="cta" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:10px;background:#1F4E8C;color:#FFFFFF;font-weight:600;font-size:15px;text-decoration:none">Enter as Karim<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+<span style="font-size:13px;color:#545B66;text-align:center">Opens My teams, 1 overdue</span>
+</div>
+</article>
+
+<article class="persona" style="background:#FFFFFF;border:1px solid #D9D6CC;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:12px"><span aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:#DCE5F2;color:#1B1F24;font-weight:600;font-size:16px">NK</span><div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600;color:#1F4E8C">Student</span><h3 style="margin:0;font-size:19px;font-weight:600">Nour Khoury</h3></div></div>
+<p style="margin:0;font-size:14px;line-height:21px;color:#545B66">Team Alpha, Smart irrigation controller. All five results are released.</p>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#3B424C">Try</span>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:21px">
+<li>See how the 88.0 final grade was built</li>
+<li>Read the reviewers' comments per criterion</li>
+<li>Find your team's defense slot</li>
+</ul></div>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+<a href="P11-Student.dc.html" class="cta" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:10px;background:#1F4E8C;color:#FFFFFF;font-weight:600;font-size:15px;text-decoration:none">Enter as Nour<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+<span style="font-size:13px;color:#545B66;text-align:center">Opens the student home</span>
+</div>
+</article>
+
+</div>
+</section>
+
+<section aria-labelledby="copy-h" style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;border-top:1px solid #D9D6CC;padding-top:32px">
+<div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:8px">
+<h2 id="copy-h" style="margin:0;font-size:16px;font-weight:600">About your private copy</h2>
+<p style="margin:0;font-size:15px;line-height:23px;color:#3B424C">Your first click creates a fresh copy of the demo data, just for this browser. Nobody else sees what you grade or release. Every copy is deleted at midnight, Paris time, and you can start over at any point with "Reset my demo".</p>
+</div>
+<div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:8px">
+<h2 style="margin:0;font-size:16px;font-weight:600">Good to know</h2>
+<p style="margin:0;font-size:15px;line-height:23px;color:#3B424C">Clearing your browser data or opening a private window starts a new copy. The demo stores a random session ID, not personal data.</p>
+</div>
+<div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:4px">
+<h2 style="margin:0;font-size:16px;font-weight:600">How it's built</h2>
+<a href="#" style="display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:500">Architecture overview</a>
+<a href="#" style="display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:500">Source on GitHub</a>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":2900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

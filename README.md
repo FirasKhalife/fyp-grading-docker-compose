@@ -52,7 +52,9 @@ to `ghcr.io/firaskhalife/`.
 | `e2e/smoke.sh` | End-to-end smoke test of a running stack, through the gateway with real tokens |
 | `e2e/api-checks.py`, `e2e/security.sh` | The API rule checks and the security checks of a running stack ([below](#smoke-test-and-checks)) |
 | `docker-compose/prod/` | Production: a standalone compose for one 8 GB host that pulls the published images, with memory limits, health checks, one edge (`edge.nginx.conf`) and secrets from a git-ignored `.env` ([docs/deploy-hardening.md](docs/deploy-hardening.md)) |
+| `contract/openapi.yaml` | The OpenAPI contract shared by the frontend and the services |
 | `docs/` | Architecture, and running it in production |
+| `docs/project/` | The product brief, decisions, the hosting study, the Phase 2 plan and the design canvas ([index](docs/project/README.md)) |
 
 ## Develop: build from source
 

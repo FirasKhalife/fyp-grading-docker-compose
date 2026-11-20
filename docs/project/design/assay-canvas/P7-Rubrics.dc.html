@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rubrics</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t{--paper:#F6F5F1;--surface:#FFFFFF;--raised:#F1F0EB;--line:#D9D6CC;--line2:#B9B6AC;--ink:#1B1F24;--ink2:#3B424C;--muted:#545B66;--faint:#8A919C;--pri:#1F4E8C;--pri-h:#163A69;--on-pri:#FFFFFF;--pri-soft:#EEF3FA;--amber:#94470C;--green:#1D6A4C;--green-soft:#E3F1EA;--banner:#1B1F24;--banner-ink:#E7E9EC;--banner-muted:#C3C8D0;--l4:#1F3F70;--l4i:#FFFFFF;--l3:#44699F;--l3i:#FFFFFF;--l2:#A9BEDD;--l2i:#1B1F24;--l1:#DCE5F2;--l1i:#1B1F24;--l0:#F1F0EB;--l0i:#1B1F24;--l0b:#545B66;--sel:#1F4E8C}
+.t{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:22px;min-height:100vh}
+.t *{box-sizing:border-box}
+.t h1,.t h2,.t h3,.t p,.t ul,.t ol{margin:0}
+.t a{color:var(--pri)}.t a:hover{color:var(--pri-h)}
+.t :focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.ink2{color:var(--ink2)}
+.wrap{max-width:1360px;margin:0 auto;padding-left:40px;padding-right:40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:10px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;border:1px solid transparent}
+.btn-pri{background:var(--pri);color:var(--on-pri)!important}.btn-pri:hover{background:var(--pri-h)}
+.btn-ghost{background:var(--surface);color:var(--ink)!important;border-color:var(--line2)}.btn-ghost:hover{border-color:var(--pri)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;line-height:1}
+.c-plain{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font-weight:500}
+.lvb{display:inline-flex;align-items:flex-end;gap:2px;height:14px;flex:none}
+.lvb i{display:block;width:4px;border-radius:1px;background:currentColor}
+.lvb i:nth-child(1){height:5px}.lvb i:nth-child(2){height:8px}.lvb i:nth-child(3){height:11px}.lvb i:nth-child(4){height:14px}
+.lvb i.o{background:transparent;border:1.5px solid currentColor;opacity:.6}
+.f4{background:var(--l4);color:var(--l4i)}.f3{background:var(--l3);color:var(--l3i)}.f2{background:var(--l2);color:var(--l2i)}.f1{background:var(--l1);color:var(--l1i)}.f0{background:var(--l0);color:var(--l0i);border:1.5px dashed var(--l0b)}
+.banner{background:var(--banner);color:var(--banner-ink);font-size:14px}
+.banner .in{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0 24px;flex-wrap:wrap}
+.banner p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0}
+.banner a{color:#FFFFFF!important;font-weight:600;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;min-height:44px;padding:0 10px}
+.banner button{min-height:44px;padding:0 14px;border-radius:8px;border:1px solid #4A525E;background:transparent;color:#FFFFFF;font:inherit;font-weight:600;cursor:pointer}
+.banner .dim{color:var(--banner-muted)}
+.apphdr{background:var(--surface);border-bottom:1px solid var(--line)}
+.apphdr .in{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:8px;color:var(--l4)!important;text-decoration:none;min-height:44px}
+.logo b{font-size:20px;font-weight:600;letter-spacing:-0.02em;color:var(--ink)}
+.nav{display:flex;gap:4px}
+.nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;font-weight:500;color:var(--ink2)!important;text-decoration:none}
+.nav a[aria-current]{color:var(--ink)!important;font-weight:600;box-shadow:inset 0 -3px 0 var(--pri)}
+.iconbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)!important;cursor:pointer;flex:none}
+.badge{position:absolute;top:4px;right:3px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1}
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--l4);color:var(--l4i);font:inherit;font-weight:600;flex:none}
+.tabrow{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabrow button{min-height:48px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:15px;font-weight:500;color:var(--ink2);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.tabrow button[aria-selected="true"]{color:var(--ink);font-weight:600;box-shadow:inset 0 -3px 0 var(--pri)}
+.matrix{width:100%;min-width:1100px;border-collapse:separate;border-spacing:0}
+.matrix th,.matrix td{padding:14px;vertical-align:top;text-align:left;border-top:1px solid var(--line);font-size:14px;line-height:20px}
+.matrix thead th{border-top:0;position:sticky;top:0;background:var(--surface);z-index:1}
+.matrix td.d{color:var(--ink2)}
+.lh{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:6px;font-size:13px;font-weight:600;white-space:nowrap}
+.ph{color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:12px}
+@media (max-width:760px){.wrap{padding-left:16px;padding-right:16px}.hide-sm{display:none!important}}
+@media (prefers-reduced-motion: reduce){.t *{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="t">
+
+<div class="banner" role="region" aria-label="Demo"><div class="wrap in">
+<p><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8DB4EE" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg><strong>Private demo</strong><span aria-hidden="true" class="dim">·</span><span>signed in as Rania Haddad (Coordinator)</span><span class="dim hide-sm">· resets at midnight, Paris time, in 9 h 28 min</span></p>
+<div style="display:flex;align-items:center;gap:4px"><a href="P2-Banner.dc.html">Switch role</a><button type="button">Reset my demo</button></div>
+</div></div>
+
+<header class="apphdr"><div class="wrap in">
+<div style="display:flex;align-items:center;gap:28px">
+<a href="#" class="logo" aria-label="Assay home"><svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="9" fill="none" stroke="currentColor" stroke-width="3.5"></rect><path d="M8 23h4.5v8H8zM14.5 19H19v12h-4.5zM21 15h4.5v16H21zM27.5 11H32v20h-4.5z" fill="currentColor"></path></svg><b>assay</b></a>
+<nav class="nav hide-sm" aria-label="Main"><a href="P5-Overview.dc.html">Overview</a><a href="P6-TeamDetail.dc.html">Teams</a><a href="P7-Rubrics.dc.html" aria-current="page">Rubrics</a><a href="P9-Schedule.dc.html">Schedule</a><a href="P3-MyTeams.dc.html">My grading</a></nav>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<a href="P10-Notifications.dc.html" class="iconbtn" aria-label="Notifications, 4 unread"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V7a4 4 0 018 0v4l1.5 1.5h-11zM6.5 14h3"></path></svg><span class="badge" aria-hidden="true">4</span></a>
+<button type="button" class="avatar" aria-label="Account menu, Rania Haddad">RH</button>
+</div>
+</div></header>
+
+<main class="wrap" style="padding-top:28px;padding-bottom:80px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:4px">
+<h1 style="font-size:36px;line-height:44px;font-weight:600;letter-spacing:-0.02em">Rubrics</h1>
+<p class="ink2">What the work looks like at each level, for every criterion. Reviewers and students see the same page.</p>
+</div>
+<a href="P7-Edit.dc.html" class="btn btn-pri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>Edit {{cur.n}} rubric</a>
+</div>
+
+<div class="tabrow" role="tablist" aria-label="Assessments">
+<sc-for list="{{tabs}}" as="x" hint-placeholder-count="5"><button type="button" role="tab" id="{{x.id}}" aria-selected="{{x.on}}" aria-controls="panel" onClick="{{x.pick}}">{{x.n}} <span class="mono muted" style="font-size:13px;font-weight:500">{{x.w}}</span></button></sc-for>
+</div>
+
+<section id="panel" role="tabpanel" aria-labelledby="{{cur.id}}" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span class="chip c-plain">Graded by {{cur.by}}</span>
+<span class="chip c-plain"><span class="mono" style="font-weight:600">{{cur.w}}</span> of the final grade</span>
+<span class="chip c-plain">{{cur.count}} criteria · weights total <span class="mono" style="font-weight:600">100%</span></span>
+<span class="chip c-plain">{{cur.due}}</span>
+</div>
+<sc-if value="{{cur.partial}}" hint-placeholder-val="{{ false }}"><p class="ink2" style="font-size:14px">Criteria and weights for this assessment come from the seed data. Descriptions marked <span class="ph">[seed data]</span> are filled in from it.</p></sc-if>
+<div class="card" style="overflow:auto;max-height:none">
+<table class="matrix">
+<caption style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">{{cur.n}} rubric: criteria by level</caption>
+<thead><tr>
+<th scope="col" style="width:22%">Criterion</th>
+<th scope="col" style="width:19%"><span class="lh f4"><span class="lvb" aria-hidden="true"><i></i><i></i><i></i><i></i></span>4 · Exemplary</span></th>
+<th scope="col" style="width:19%"><span class="lh f3"><span class="lvb" aria-hidden="true"><i></i><i></i><i></i><i class="o"></i></span>3 · Accomplished</span></th>
+<th scope="col" style="width:17%"><span class="lh f2"><span class="lvb" aria-hidden="true"><i></i><i></i><i class="o"></i><i class="o"></i></span>2 · Developing</span></th>
+<th scope="col" style="width:15%"><span class="lh f1"><span class="lvb" aria-hidden="true"><i></i><i class="o"></i><i class="o"></i><i class="o"></i></span>1 · Beginning</span></th>
+<th scope="col" style="width:8%"><span class="lh f0"><span class="lvb" aria-hidden="true"><i class="o"></i><i class="o"></i><i class="o"></i><i class="o"></i></span>0</span></th>
+</tr></thead>
+<tbody>
+<sc-for list="{{cur.rows}}" as="r" hint-placeholder-count="10">
+<tr>
+<th scope="row" style="font-weight:600"><span style="display:flex;flex-direction:column;gap:4px"><span style="overflow-wrap:anywhere">{{r.t}}</span><span class="mono muted" style="font-weight:500;font-size:13px">Weight {{r.w}}%</span></span></th>
+<sc-for list="{{r.d}}" as="d"><td class="d"><span class="{{d.cls}}">{{d.text}}</span></td></sc-for>
+<td class="d muted">Not addressed.</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<p class="muted" style="font-size:13px">Score = Σ (level × weight) ÷ 4, from 0 to 100. A team's assessment grade is the plain average of its reviewers.</p>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+var S = '[seed data]';
+var R = [
+  { n: 'Proposal presentation', w: '15%', by: 'jury', due: 'Due 20 Feb 2026', rows: [
+    ['Project objectives / Expected outcomes', 15, ['Students presented all the objectives of the project and set out all the outcomes with justification.', 'Students presented the main objectives of the project and identified the main outcomes.', S, S]],
+    ['Recent developments in the field', 10, [S, S, S, S]], ['Functional requirements', 15, [S, S, S, S]], ['Technical and non-technical constraints', 15, [S, S, S, S]],
+    ['Solution specifications', 15, [S, S, S, S]], ['Future work plan', 10, [S, S, S, S]], ['Oral expression', 10, [S, S, S, S]], ['Slides', 10, [S, S, S, S]]] },
+  { n: 'Progress report', w: '0%', by: 'jury', due: 'Due 27 Mar 2026 · required', rows: [
+    ['Meeting management', 20, [S, S, S, S]], ['Proposal report', 20, [S, S, S, S]], ['Progress report', 20, [S, S, S, S]], ['Implementation progress', 20, [S, S, S, S]], ['Motivation', 20, [S, S, S, S]]] },
+  { n: 'Advisor assessment', w: '25%', by: 'advisor', due: 'Due 5 Jun 2026', rows: [
+    ['Learning new knowledge', 20, [S, S, S, S]], ['Teamwork', 20, [S, S, S, S]], ['Engineering practice skills', 20, [S, S, S, S]], ['Achievement of objectives', 20, [S, S, S, S]], ['Motivation and meetings', 20, [S, S, S, S]]] },
+  { n: 'Final report', w: '30%', by: 'jury', due: 'Due 12 Jun 2026', rows: [
+    ['Project objectives / Outcomes', 10, ['All objectives are stated clearly and measurably, and each outcome is justified and traced to the results achieved.', 'The main objectives and outcomes are stated clearly, with partial justification.', 'Objectives are stated vaguely, or several outcomes are missing.', 'Objectives and outcomes are barely stated or unclear.']],
+    ['Background research / Related works', 10, ['Recent, relevant works are critically compared, and the gap the project fills is clearly identified.', 'Relevant works are described and related to the project, with limited comparison.', 'Few works are cited, or they are described without relating them to the project.', 'Little or no background research is presented.']],
+    ['Develop functional requirements by analyzing desired needs (2.1)', 10, ['Functional requirements are complete, testable and clearly derived from an analysis of user needs.', 'The main functional requirements are identified and mostly testable.', 'Requirements are incomplete or not clearly linked to needs.', 'Requirements are missing or listed without analysis.']],
+    ['Develop technical and non-technical constraints (2.2)', 10, ['Technical and non-technical constraints (cost, time, ethics, regulations) are fully identified and quantified where possible.', 'The main technical and non-technical constraints are identified.', 'Only technical constraints, or only a few constraints, are identified.', 'Constraints are barely mentioned.']],
+    ['Problem formulation', 10, ['The problem is formulated precisely, with scope, assumptions and success criteria.', 'The problem is formulated clearly, with minor gaps in scope or success criteria.', 'The problem formulation is partial or ambiguous.', 'The problem is not clearly formulated.']],
+    ['Incorporate appropriate engineering standards and specifications related to the engineering design (2.3)', 10, ['Relevant standards are identified, cited and explicitly applied in the design.', 'Relevant standards are identified and partly applied.', 'Standards are mentioned but not applied, or are only partly relevant.', 'Standards are not considered.']],
+    ['Propose multiple solutions and evaluate them against functional requirements and constraints (2.4)', 10, ['Several credible alternatives are evaluated systematically (e.g. with a decision matrix) against requirements and constraints.', 'At least two alternatives are compared against the main requirements.', 'Alternatives are mentioned without a structured evaluation.', 'A single solution is presented with no alternatives.']],
+    ['Implement, test and iteratively improve a solution satisfying the specified functional requirements and constraints, considering risks, and making trade-offs (2.5)', 5, ['The solution is fully implemented, tested against the requirements, and improved over iterations, with risks and trade-offs documented.', 'The solution is implemented and tested against most requirements, with some iteration.', 'The implementation is partial or only lightly tested.', 'The implementation is minimal or untested.']],
+    ['Results presentation and analysis', 5, ['Results are presented clearly with appropriate figures, analysed critically, and compared with the objectives.', 'Results are presented clearly with some analysis.', 'Results are presented with little analysis.', 'Results are missing or unclear.']],
+    ['Conclusion and perspectives', 5, ['The conclusion summarises the achievements against the objectives, discusses limitations, and proposes concrete future work.', 'The conclusion summarises the achievements and mentions future work.', 'The conclusion is generic, with little reflection.', 'The conclusion is missing or unrelated to the work.']],
+    ['Make informed judgments by considering the impact of engineering solutions in global, economic, environmental and societal contexts (4.2)', 5, ['Impacts in all four contexts are analysed and influence design decisions.', 'Impacts in several contexts are discussed.', 'Impacts are mentioned briefly.', 'Impacts are not considered.']],
+    ['Demonstrate written communication skills with a range of audiences by writing adequate documents using appropriate format and language (3.1)', 5, ['The report is well structured, clear and nearly error-free, and follows the required template.', 'The report is clear and well structured, with minor errors.', 'The structure is inconsistent or there are frequent language errors.', 'The report is hard to follow and the template is not respected.']],
+    ['Scientific referencing', 5, ['All sources are cited consistently in a standard style, and the references are recent and relevant.', 'Sources are cited with minor inconsistencies.', 'Citations are incomplete or inconsistent.', 'Sources are missing or not cited.']]] },
+  { n: 'Final presentation', w: '30%', by: 'jury', due: 'Defenses 9–11 Jun · due 12 Jun 2026', rows: [
+    ['Project objectives / Outcomes', 10, ['Students presented all the objectives clearly and showed which outcomes were achieved, with evidence.', 'Students presented the main objectives and outcomes achieved.', 'Students presented the objectives vaguely or omitted some outcomes.', 'Students did not clearly present the objectives or outcomes.']],
+    ['Background research / Related works', 10, ['Students positioned the project against recent related work and stated what is new.', 'Students summarised the relevant related work.', 'Students mentioned related work briefly, without positioning the project.', 'Students presented no related work.']],
+    ['Develop functional requirements by analyzing desired needs (2.1)', 10, ['Students explained how the needs led to the requirements and showed that the requirements were met.', 'Students presented the main requirements and how they were met.', 'Students listed the requirements without linking them to the needs or results.', 'Students did not present the requirements.']],
+    ['Develop technical and non-technical constraints (2.2)', 10, ['Students explained the key constraints and how the design respected them.', 'Students presented the main constraints.', 'Students mentioned constraints superficially.', 'Students did not present the constraints.']],
+    ['Propose multiple solutions and evaluate them against functional requirements and constraints (2.4)', 10, ['Students justified the chosen solution through a clear comparison of alternatives.', 'Students compared the main alternatives briefly.', 'Students mentioned alternatives without evaluating them.', 'Students presented only one solution.']],
+    ['Implement, test and iteratively improve a solution satisfying the specified functional requirements and constraints, considering risks, and making trade-offs (2.5)', 10, ['Students demonstrated a working solution (live or recorded), explained the tests and iterations, and discussed the trade-offs.', 'Students demonstrated a working solution and the main tests.', 'Students showed a partial solution or limited testing.', 'Students showed no working solution.']],
+    ['Results and analysis', 10, ['Results were shown clearly, analysed critically, and linked to the objectives.', 'Results were shown clearly, with some analysis.', 'Results were shown with little analysis.', 'Results were missing or unclear.']],
+    ['Conclusion and perspectives', 10, ['Students concluded with achievements, limitations and concrete next steps.', 'Students concluded with achievements and next steps.', 'The conclusion was generic.', 'There was no real conclusion.']],
+    ['Demonstrate oral communication skills with a range of audiences by using appropriate verbal and non-verbal language, adopting the appropriate formatting and supporting material (3.2)', 10, ['The delivery was confident, clear and well timed, every member contributed, and questions were answered precisely.', 'The delivery was clear and mostly on time, and most questions were answered well.', 'The delivery was hesitant or over time, or questions were answered partially.', 'The delivery was hard to follow, and questions were not answered.']],
+    ['Slides quality', 10, ['Slides are clear, consistent and visual, with readable figures and minimal text.', 'Slides are clear, with minor layout or density issues.', 'Slides are text-heavy or inconsistent.', 'Slides are hard to read or poorly organised.']]] }
+];
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var tab = (this.state && this.state.tab != null) ? this.state.tab : 4;
+    var tabs = R.map(function (r, i) { return { n: r.n, w: r.w, id: 'tab-' + i, on: i === tab, pick: function () { self.setState({ tab: i }); } }; });
+    var c = R[tab];
+    var partial = false;
+    var rows = c.rows.map(function (r) {
+      return { t: r[0], w: r[1], d: r[2].map(function (d) { if (d === S) partial = true; return { text: d, cls: d === S ? 'ph' : '' }; }) };
+    });
+    return { tabs: tabs, cur: { n: c.n, w: c.w, by: c.by, due: c.due, count: c.rows.length, rows: rows, id: 'tab-' + tab, partial: partial } };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My teams</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t{--paper:#F6F5F1;--surface:#FFFFFF;--raised:#F1F0EB;--line:#D9D6CC;--line2:#B9B6AC;--ink:#1B1F24;--ink2:#3B424C;--muted:#545B66;--faint:#8A919C;--pri:#1F4E8C;--pri-h:#163A69;--on-pri:#FFFFFF;--pri-soft:#EEF3FA;--amber:#94470C;--amber-soft:#FBEEDF;--amber-line:#C98A4B;--amber-bg:#FFF9F2;--green:#1D6A4C;--green-soft:#E3F1EA;--banner:#1B1F24;--banner-ink:#E7E9EC;--banner-muted:#C3C8D0;--l4:#1F3F70;--l4i:#FFFFFF;--l3:#44699F;--l3i:#FFFFFF;--l2:#A9BEDD;--l2i:#1B1F24;--l1:#DCE5F2;--l1i:#1B1F24;--l0:#F1F0EB;--l0i:#1B1F24;--l0b:#545B66;--sel:#1F4E8C}
+.t{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:22px;min-height:100vh}
+.t *{box-sizing:border-box}
+.t h1,.t h2,.t h3,.t p,.t ul,.t ol{margin:0}
+.t a{color:var(--pri)}.t a:hover{color:var(--pri-h)}
+.t :focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.ink2{color:var(--ink2)}
+.wrap{max-width:1360px;margin:0 auto;padding-left:40px;padding-right:40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:10px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;border:1px solid transparent}
+.btn-pri{background:var(--pri);color:var(--on-pri)!important}.btn-pri:hover{background:var(--pri-h)}
+.btn-ghost{background:var(--surface);color:var(--ink)!important;border-color:var(--line2)}.btn-ghost:hover{border-color:var(--pri)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap;line-height:1}
+.c-none{border:1px solid var(--faint);color:var(--ink2);font-weight:500}
+.c-draft{border:1px dashed var(--pri);background:var(--pri-soft);color:var(--pri)}
+.c-sub{background:var(--green-soft);color:var(--green)}
+.c-over{background:var(--amber-soft);color:var(--amber)}
+.c-plain{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font-weight:500}
+.lvb{display:inline-flex;align-items:flex-end;gap:2px;height:14px;flex:none}
+.lvb i{display:block;width:4px;border-radius:1px;background:currentColor}
+.lvb i:nth-child(1){height:5px}.lvb i:nth-child(2){height:8px}.lvb i:nth-child(3){height:11px}.lvb i:nth-child(4){height:14px}
+.lvb i.o{background:transparent;border:1.5px solid currentColor;opacity:.6}
+.f4{background:var(--l4);color:var(--l4i)}.f3{background:var(--l3);color:var(--l3i)}.f2{background:var(--l2);color:var(--l2i)}.f1{background:var(--l1);color:var(--l1i)}
+.lvchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:6px;font-size:14px;font-weight:600;white-space:nowrap;font-family:'IBM Plex Mono',monospace}
+.banner{background:var(--banner);color:var(--banner-ink);font-size:14px}
+.banner .in{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:0 24px;flex-wrap:wrap}
+.banner p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0}
+.banner a{color:#FFFFFF!important;font-weight:600;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;min-height:44px;padding:0 10px}
+.banner button{min-height:44px;padding:0 14px;border-radius:8px;border:1px solid #4A525E;background:transparent;color:#FFFFFF;font:inherit;font-weight:600;cursor:pointer}
+.banner .dim{color:var(--banner-muted)}
+.apphdr{background:var(--surface);border-bottom:1px solid var(--line)}
+.apphdr .in{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:8px;color:var(--l4)!important;text-decoration:none;min-height:44px}
+.logo b{font-size:20px;font-weight:600;letter-spacing:-0.02em;color:var(--ink)}
+.nav{display:flex;gap:4px}
+.nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;font-weight:500;color:var(--ink2)!important;text-decoration:none}
+.nav a[aria-current]{color:var(--ink)!important;font-weight:600;box-shadow:inset 0 -3px 0 var(--pri)}
+.iconbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)!important;cursor:pointer;flex:none}
+.badge{position:absolute;top:4px;right:3px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1}
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--l3);color:var(--l3i);font:inherit;font-weight:600;flex:none}
+.show-sm{display:none!important}
+.meter{height:8px;border-radius:4px;background:var(--raised);overflow:hidden;border:1px solid var(--line)}
+.meter span{display:block;height:100%;background:var(--pri)}
+.arow{display:grid;grid-template-columns:minmax(0,1.6fr) 190px 210px 120px 180px;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.ahead{padding:0 0 8px;border-top:0;font-size:13px;font-weight:600;color:var(--muted)}
+.arow .act{justify-self:end}
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--raised);border:1px solid var(--line)}
+.tabs a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ink2)!important;text-decoration:none}
+.tabs a[aria-current]{background:var(--surface);color:var(--ink)!important;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+@media (max-width:760px){
+.wrap{padding-left:16px;padding-right:16px}.hide-sm{display:none!important}.show-sm{display:inline-flex!important}
+.arow{grid-template-columns:1fr auto;gap:8px 12px;padding:16px 0}
+.arow .nm{grid-column:1 / -1}
+.arow .due{grid-column:1 / -1;order:3}
+.arow .act{grid-column:1 / -1;justify-self:stretch;order:4}
+.arow .act .btn{width:100%}
+.ahead{display:none}
+.h1{font-size:28px!important;line-height:34px!important}
+.teamhead{padding:16px!important}
+.teambody{padding:0 16px 8px!important}
+}
+@media (prefers-reduced-motion: reduce){.t *{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="t">
+
+<div class="banner" role="region" aria-label="Demo"><div class="wrap in">
+<p><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8DB4EE" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg><strong>Private demo</strong><span aria-hidden="true" class="dim">·</span><span>signed in as Jane Smith (Jury)</span><span class="dim hide-sm">· resets at midnight, Paris time, in 9 h 28 min</span></p>
+<div style="display:flex;align-items:center;gap:4px"><a href="P2-Banner.dc.html">Switch role</a><button type="button">Reset my demo</button></div>
+</div></div>
+
+<header class="apphdr"><div class="wrap in">
+<div style="display:flex;align-items:center;gap:28px">
+<a href="#" class="logo" aria-label="Assay home"><svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="9" fill="none" stroke="currentColor" stroke-width="3.5"></rect><path d="M8 23h4.5v8H8zM14.5 19H19v12h-4.5zM21 15h4.5v16H21zM27.5 11H32v20h-4.5z" fill="currentColor"></path></svg><b>assay</b></a>
+<nav class="nav hide-sm" aria-label="Main"><a href="P3-MyTeams.dc.html" aria-current="page">My teams</a><a href="P7-Rubrics.dc.html">Rubrics</a><a href="P9-Schedule.dc.html">Schedule</a></nav>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<a href="P10-Notifications.dc.html" class="iconbtn" aria-label="Notifications, 2 unread"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V7a4 4 0 018 0v4l1.5 1.5h-11zM6.5 14h3"></path></svg><span class="badge" aria-hidden="true">2</span></a>
+<button type="button" class="avatar" aria-label="Account menu, Jane Smith">JS</button>
+<button type="button" class="iconbtn show-sm" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg></button>
+</div>
+</div></header>
+
+<main class="wrap" style="padding-top:28px;padding-bottom:80px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+<div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:12px;justify-content:center">
+<h1 class="h1" style="font-size:36px;line-height:44px;font-weight:600;letter-spacing:-0.02em">My teams</h1>
+<p class="ink2" style="font-size:17px;line-height:26px"><strong class="mono">9 of 12</strong> evaluations submitted · 1 draft · 2 not started · none overdue</p>
+<div class="meter" aria-hidden="true" style="max-width:520px"><span style="width:75%"></span></div>
+</div>
+<section class="card" aria-labelledby="next-h" style="flex:1 1 380px;min-width:0;padding:20px;display:flex;flex-direction:column;gap:10px;border:2px solid var(--pri)">
+<span id="next-h" class="muted" style="font-size:13px;font-weight:600">Next up</span>
+<p style="font-size:18px;line-height:26px;font-weight:600">Final report · Team Beta</p>
+<p class="ink2" style="font-size:14px">Due Fri 12 Jun, in 2 days · 8 of 13 criteria scored</p>
+<a href="P4-Grading.dc.html" class="btn btn-pri" style="align-self:flex-start">Continue draft<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+</section>
+</div>
+
+<nav class="tabs" aria-label="Filter evaluations" style="align-self:flex-start"><a href="#" aria-current="page">All teams 3</a><a href="#">To do 3</a><a href="#">Submitted 9</a></nav>
+
+<sc-for list="{{teams}}" as="t" hint-placeholder-count="3">
+<section class="card" aria-labelledby="{{t.id}}">
+<div class="teamhead" style="padding:20px 24px;display:flex;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;align-items:flex-start;border-bottom:1px solid var(--line)">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<h2 id="{{t.id}}" style="font-size:20px;line-height:28px;font-weight:600">Team {{t.n}}</h2>
+<p class="ink2">{{t.p}}</p>
+<p class="muted" style="font-size:13px">Advisor {{t.adv}} · Jury {{t.jury}}</p>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<span class="chip c-plain">Your role: Jury</span>
+<span class="chip c-plain"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"></rect><path d="M2 6.5h12M5 1.5v3M11 1.5v3"></path></svg>{{t.def}}</span>
+<span class="{{t.sumCls}}">{{t.sum}}</span>
+</div>
+</div>
+<div class="teambody" style="padding:4px 24px 8px">
+<div class="arow ahead" aria-hidden="true"><span>Assessment</span><span>Status</span><span>Due</span><span>My score</span><span></span></div>
+<ul style="padding:0;list-style:none">
+<sc-for list="{{t.rows}}" as="r" hint-placeholder-count="4">
+<li class="arow">
+<span class="nm" style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-weight:600">{{r.n}}</span><span class="mono muted" style="font-size:12px">{{r.w}} of final grade</span></span>
+<span><span class="{{r.cls}}">
+<sc-if value="{{r.isSub}}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg></sc-if>
+<sc-if value="{{r.isDraft}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg></sc-if>
+<sc-if value="{{r.isNew}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5"></circle></svg></sc-if>
+{{r.status}}</span></span>
+<span class="due ink2" style="font-size:14px">{{r.due}}</span>
+<span><sc-if value="{{r.hasScore}}" hint-placeholder-val="{{ true }}"><span class="{{r.scoreCls}}" aria-label="{{r.scoreAria}}"><span class="lvb" aria-hidden="true"><sc-for list="{{r.bars}}" as="b"><i class="{{b.c}}"></i></sc-for></span>{{r.score}}</span></sc-if><sc-if value="{{r.noScore}}" hint-placeholder-val="{{ false }}"><span class="muted hide-sm">—</span></sc-if></span>
+<span class="act"><a href="{{r.href}}" class="{{r.btnCls}}">{{r.btn}}</a></span>
+</li>
+</sc-for>
+</ul>
+</div>
+</section>
+</sc-for>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+function bars(v) { return [0, 1, 2, 3].map(function (i) { return { c: i < v ? '' : 'o' }; }); }
+function bandOf(s) { return s < 12.5 ? 0 : s < 37.5 ? 1 : s < 62.5 ? 2 : s < 87.5 ? 3 : 4; }
+var LVN = ['Not demonstrated', 'Beginning', 'Developing', 'Accomplished', 'Exemplary'];
+var A = [['Proposal presentation', '15%', 'Due 20 Feb'], ['Progress report', '0%', 'Due 27 Mar'], ['Final report', '30%', 'Due Fri 12 Jun'], ['Final presentation', '30%', 'Due Fri 12 Jun']];
+var TEAMS = [
+  { n: 'Beta', p: 'Clinic queue management with SMS notifications', adv: 'Emily Clark', jury: 'Jane Smith, John Doe, Michael Johnson', def: 'Defense Thu 11 Jun, 09:00 · Amphi A', sum: '2 to do', sumCls: 'chip c-draft',
+    r: [['s', 73.8], ['s', 72.5], ['d', null, 'Due Fri 12 Jun · in 2 days', '8 of 13 scored'], ['n', null, 'Due Fri 12 Jun · defense Thu']] },
+  { n: 'Epsilon', p: 'Energy monitoring dashboard for university buildings', adv: 'John Doe', jury: 'Jane Smith, Lea Mansour, Karim Nassar', def: 'Defended today, 09:00 · Amphi A', sum: '1 to do', sumCls: 'chip c-draft',
+    r: [['s', 80.0], ['s', 76.3], ['s', 78.8], ['n', null, 'Due Fri 12 Jun · in 2 days']] },
+  { n: 'Alpha', p: 'Smart irrigation controller with soil-moisture forecasting', adv: 'Emily Clark', jury: 'Jane Smith, John Doe, Lea Mansour', def: 'Defended Tue 9 Jun', sum: 'All 4 submitted', sumCls: 'chip c-sub',
+    r: [['s', 88.8], ['s', 85.0], ['s', 87.5], ['s', 87.5]] }
+];
+class Component extends DCLogic {
+  renderVals() {
+    var teams = TEAMS.map(function (t, ti) {
+      return {
+        id: 'team-' + t.n.toLowerCase(), n: t.n, p: t.p, adv: t.adv, jury: t.jury, def: t.def, sum: t.sum, sumCls: t.sumCls,
+        rows: t.r.map(function (r, i) {
+          var k = r[0];
+          var b = r[1] != null ? bandOf(r[1]) : 0;
+          return {
+            n: A[i][0], w: A[i][1],
+            status: k === 's' ? 'Submitted' : k === 'd' ? 'Draft · ' + r[3] : 'Not started',
+            cls: k === 's' ? 'chip c-sub' : k === 'd' ? 'chip c-draft' : 'chip c-none',
+            isSub: k === 's', isDraft: k === 'd', isNew: k === 'n',
+            due: r[2] || A[i][2],
+            hasScore: r[1] != null, noScore: r[1] == null,
+            score: r[1] != null ? r[1].toFixed(1) : '', scoreCls: 'lvchip f' + b, bars: bars(b),
+            scoreAria: r[1] != null ? 'My score ' + r[1].toFixed(1) + ', ' + LVN[b] + ' band' : '',
+            btn: k === 's' ? 'View' : k === 'd' ? 'Continue draft' : 'Start grading',
+            btnCls: k === 's' ? 'btn btn-ghost' : 'btn btn-pri',
+            href: k === 'd' ? 'P4-Grading.dc.html' : '#'
+          };
+        })
+      };
+    });
+    return { teams: teams };
+  }
+}
+</script>
+</body>
+</html>
