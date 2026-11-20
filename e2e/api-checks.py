@@ -92,6 +92,27 @@ def copy_call(session, who, method, path):
     return r
 
 
+def header(r, name):
+    return next((v for k, v in r.headers.items() if k.lower() == name.lower()), None)
+
+
+def wait_for_full_allowance(session, who):
+    """Waits until this client's browsing allowance (the gateway's per-IP token bucket) is full again, and returns
+    its capacity. The bucket's size and refill rate come from the gateway's X-RateLimit-* headers, so a change in
+    its config needs no change here."""
+    r = call(session, who, "GET", "/api/me")
+    try:
+        capacity = int(header(r, "X-RateLimit-Burst-Capacity"))
+        rate = int(header(r, "X-RateLimit-Replenish-Rate"))
+        remaining = int(header(r, "X-RateLimit-Remaining"))
+    except (TypeError, ValueError):
+        capacity, rate, remaining = 60, 20, 0   # application.yml's rate-limit, assuming an empty bucket
+    wait = (capacity - remaining) / max(rate, 1) + 1
+    print(f"       (browsing allowance: {remaining} of {capacity} left, {rate}/s; waiting {wait:.1f} s to refill)")
+    time.sleep(wait)
+    return capacity
+
+
 def new_session(who="rania"):
     s = str(uuid.uuid4())
     r = copy_call(s, who, "PUT", "/api/demo/session")
@@ -356,14 +377,20 @@ def main():
     new_id = r.body["id"] if r.status in (200, 201) else s2
     check("old id 404 after reset", call(s2, "jane", "GET", "/api/me").status == 404)
     check("new id serves the seed again (Beta FR 2 of 3)", cell(new_id, "Beta", "FINAL_REPORT")["state"] == "WAITING")
+    # The browsing allowance is per client IP, and every call of this script shares one, so the checks above have
+    # spent part of it. A visitor arrives with a full allowance: wait until it has refilled, as the gateway reports.
+    burst_size = 40
+    capacity = wait_for_full_allowance(s1, "jane")
+    check(f"the browsing allowance holds a {burst_size}-call burst", capacity >= burst_size, capacity)
     codes = []
 
     def burst():
         codes.append(call(s1, "jane", "GET", "/api/me/assignments").status)
-    th = [threading.Thread(target=burst) for _ in range(40)]
+    th = [threading.Thread(target=burst) for _ in range(burst_size)]
     [t.start() for t in th]
     [t.join() for t in th]
-    check("40 quick calls: no 429 (browsing allowance)", 429 not in codes, codes)
+    check(f"{burst_size} quick calls: no 429 (browsing allowance)", 429 not in codes, codes)
+    check(f"{burst_size} quick calls: all 200", set(codes) == {200}, codes)
 
 
 if __name__ == "__main__":

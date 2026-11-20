@@ -529,11 +529,11 @@ DAY_OF = {-1: "day 1", 0: "day 2", 1: "day 3"}
 JANE, JOHN, MICH, EMILY, KARIM, LEA, RANIA = (uid(u) for u in
     ["jane.smith", "john.doe", "michael.johnson", "emily.clark", "karim.nassar", "lea.mansour", "rania.haddad"])
 DELTA_MOVE = N(168)   # feed: "Today 09:40"
-TODAY_0800 = N(268)
+
+# Today's reminders (due soon, overdue) aren't seeded: admin-service sends them when the copy is created
+# (DueReminders), from the copy's own due dates and grades. The older ones below are history.
 
 # Jane (P10)
-note(JANE, "DUE_SOON", "Final report for Team Beta is due in 2 days. Your draft has %d of 13 criteria scored."
-     % sum(l is not None for l in BETA_FR_DRAFT_LEVELS), TODAY_0800, link("EVALUATION", "beta", FR))
 note(JANE, "DEFENSE_SCHEDULED", "Defense confirmed: Team Beta, tomorrow at 09:00, Amphi A.", DELTA_MOVE, link("SCHEDULE", "beta"))
 note(JANE, "GRADE_FINAL", "Final presentation for Team Alpha is final: %s." % g("alpha", FP), finalized_at("alpha", FP), link("EVALUATION", "alpha", FP))
 note(JANE, "FINAL_GRADE_COMPUTED", "Team Alpha's final grade is computed: %s." % disp(final_grade("alpha")), final_at("alpha"), link("MY_TEAMS", "alpha"))
@@ -552,15 +552,6 @@ for t in TEAMS:
 note(RANIA, "OVERDUE", "2 advisor assessments are overdue: Team Delta (Karim Nassar, draft) and Team Zeta (Michael Johnson, not started).",
      D(-4, "08:00"), link("OVERVIEW", None, ADV))
 
-
-def open_at(a, at):
-    expected = sum(len(holders(t["slug"], a)) for t in TEAMS)
-    done = sum(1 for (s, aa), subs in SUBMITTED.items() if aa == a for x in subs if tmin(x[2]) <= tmin(at))
-    return expected - done
-
-
-note(RANIA, "DUE_SOON", "Final report and Final presentation are due in 2 days: %d and %d evaluations still open."
-     % (open_at(FR, TODAY_0800), open_at(FP, TODAY_0800)), TODAY_0800, link("OVERVIEW"))
 note(RANIA, "DEFENSE_SCHEDULED", "Team Delta's defense moved to tomorrow at 09:00, Room B-204. Conflict: John Doe is in two defenses at 09:00.",
      DELTA_MOVE, link("SCHEDULE", "delta"))
 
@@ -573,19 +564,16 @@ note(KARIM, "DEFENSE_SCHEDULED", "Defense scheduled: Team Epsilon, %s of the def
 note(KARIM, "DUE_SOON", "Advisor assessment for Team Delta is due in 3 days.", D(-8, "08:00"), link("EVALUATION", "delta", ADV))
 note(KARIM, "OVERDUE", "Advisor assessment for Team Delta is overdue. Your draft has 2 of 5 criteria scored.", D(-4, "08:00"), link("EVALUATION", "delta", ADV))
 note(KARIM, "FINAL_GRADE_COMPUTED", "Team Gamma's final grade is computed: %s." % disp(final_grade("gamma")), final_at("gamma"), link("MY_TEAMS", "gamma"))
-note(KARIM, "DUE_SOON", "Final presentation for Team Epsilon is due in 2 days.", TODAY_0800, link("EVALUATION", "epsilon", FP))
 
 # John
 note(JOHN, "FINAL_GRADE_COMPUTED", "Team Alpha's final grade is computed: %s." % disp(final_grade("alpha")), final_at("alpha"), link("MY_TEAMS", "alpha"))
 note(JOHN, "GRADE_FINAL", "Final presentation for Team Zeta is final: %s." % g("zeta", FP), finalized_at("zeta", FP), link("EVALUATION", "zeta", FP))
-note(JOHN, "DUE_SOON", "Final report for Team Delta is due in 2 days.", TODAY_0800, link("EVALUATION", "delta", FR))
 note(JOHN, "DEFENSE_SCHEDULED", "Team Delta's defense moved to tomorrow at 09:00, Room B-204. You are also on the Team Beta jury at 09:00.",
      DELTA_MOVE, link("SCHEDULE", "delta"))
 
 # Emily
 note(EMILY, "GRADE_FINAL", "Advisor assessment for Team Beta is final: %s." % g("beta", ADV), finalized_at("beta", ADV), link("EVALUATION", "beta", ADV))
 note(EMILY, "FINAL_GRADE_COMPUTED", "Team Alpha's final grade is computed: %s." % disp(final_grade("alpha")), final_at("alpha"), link("MY_TEAMS", "alpha"))
-note(EMILY, "DUE_SOON", "Final report for Team Delta is due in 2 days.", TODAY_0800, link("EVALUATION", "delta", FR))
 note(EMILY, "DEFENSE_SCHEDULED", "Team Delta's defense moved to tomorrow at 09:00, Room B-204.", DELTA_MOVE, link("SCHEDULE", "delta"))
 
 # Lea
