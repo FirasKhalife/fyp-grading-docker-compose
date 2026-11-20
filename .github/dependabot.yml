@@ -5,6 +5,16 @@ updates:
   - package-ecosystem: docker
     directory: /docker-compose/config/keycloak
     schedule: {interval: weekly, day: monday}
+  # The derived Postgres and MongoDB images: patch and minor releases only. A new major version can't open the
+  # existing data volumes (Postgres needs a dump and restore, MongoDB a feature-compatibility upgrade), so do it by hand.
+  - package-ecosystem: docker
+    directory: /docker-compose/config/postgres
+    schedule: {interval: weekly, day: monday}
+    ignore: [{dependency-name: postgres, update-types: [version-update:semver-major]}]
+  - package-ecosystem: docker
+    directory: /docker-compose/config/mongo
+    schedule: {interval: weekly, day: monday}
+    ignore: [{dependency-name: mongo, update-types: [version-update:semver-major]}]
   - package-ecosystem: docker-compose
     directory: /docker-compose/prod
     schedule: {interval: weekly, day: monday}

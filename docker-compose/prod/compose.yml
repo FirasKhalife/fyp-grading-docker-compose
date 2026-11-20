@@ -13,8 +13,10 @@
 #   tmpfs mounts or the named volumes), no Linux capabilities and no privilege escalation.
 # - Memory: every container has a limit (table in docs/deploy-hardening.md). They add up to 5.4 GiB, which leaves
 #   about 2.5 GB of the 8 GB for the OS, Docker and the page cache. The JVMs size their heap from the limit.
-# - Third-party images are pinned to an exact version and digest (Dependabot proposes updates). Every secret comes from
-#   .env (see .env.example); a missing one stops `up`.
+# - Third-party images are pinned to an exact version and digest (Dependabot proposes updates). Postgres and MongoDB
+#   are the official images minus gosu and unused tools, built and signed by this repo's CI (config/postgres,
+#   config/mongo) and tagged with the upstream version. Every secret comes from .env (see .env.example); a missing
+#   one stops `up`.
 name: assay
 
 x-base: &base
@@ -64,7 +66,7 @@ x-spring-env: &spring-env
 
 x-postgres: &postgres
   <<: *base
-  image: postgres:16.16-alpine3.24@sha256:81e77a4833487b8132fe4b00bedd39dc3f74b8641e387f19312a48f7de218c2e
+  image: ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24   # postgres:16.16-alpine3.24 without gosu
   user: '70:70'   # postgres; a new volume takes its owner from the image, so no chown (and no root) is needed
   tmpfs: ['/tmp:size=16m', '/var/run/postgresql:size=1m']
   # Small buffers: each database holds a few MB of demo data per visitor copy.
@@ -106,7 +108,7 @@ services:
 
   mongodb:
     <<: *base
-    image: mongo:7.0.48@sha256:884c055bff8b7144ca44830d01826facd3083b33c4dea44b94a1476c62de3c32
+    image: ghcr.io/firaskhalife/fyp-grading-mongo:7.0.48   # mongo:7.0.48 without gosu, js-yaml and the database tools
     user: '999:999'   # mongodb
     # WiredTiger would otherwise size its cache from the host's RAM, not the container's limit.
     command: [mongod, --wiredTigerCacheSizeGB, '0.25']

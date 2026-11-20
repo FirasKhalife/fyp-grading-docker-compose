@@ -17,7 +17,9 @@ docker compose up -d --wait   # add --profile tunnel to run cloudflared in the s
 - **Images.** Every Assay image is `ghcr.io/firaskhalife/fyp-grading-<name>`, published from each repo's default
   branch with the tags `latest` and the commit's short SHA. `ASSAY_TAG` in `.env` picks the tag for all of them; pin
   a SHA for a release you can roll back to. The Keycloak image (realm, theme, account console off) is built from
-  this repo's `docker-compose/config/keycloak`.
+  this repo's `docker-compose/config/keycloak`. So are `fyp-grading-postgres` and `fyp-grading-mongo`
+  (`config/postgres`, `config/mongo`): the official images minus `gosu` and unused tools, tagged with the upstream
+  version (section 5).
 - **Secrets.** All of them come from `.env` (see `.env.example`); compose refuses to start while one is empty. The
   demo personas' password, `assay-demo`, is public on purpose and isn't configured.
 - **Config.** The config server clones the public `fyp-grading-config` repository (`git` profile), branch `main`.
@@ -33,9 +35,11 @@ docker compose up -d --wait   # add --profile tunnel to run cloudflared in the s
 - **Restarts.** `unless-stopped`, which also brings a JVM back after an out-of-memory exit (`ExitOnOutOfMemoryError`).
 - **Locked down.** Every container runs as a non-root user, with a read-only root filesystem (writable paths are
   small `tmpfs` mounts or the named volumes), `cap_drop: [ALL]` and `no-new-privileges`. The databases start as their
-  own users (`user:` in compose), so their images' root-to-user switch (`gosu`) never runs.
-- **Pinned.** Third-party images are pinned to an exact version and digest (`postgres:16.16-alpine3.24@sha256:…`).
-  Dependabot (`docker-compose` ecosystem) proposes updates weekly.
+  own users (`user:` in compose), so the root-to-user switch (`gosu`) isn't needed, and the derived database images
+  don't have it.
+- **Pinned.** Third-party images are pinned to an exact version and digest (`redis:8.4.8-alpine@sha256:…`).
+  Dependabot (`docker-compose` ecosystem) proposes updates weekly, and bumps the derived images' bases within their
+  major version (a new major can't open the existing volumes without a migration).
 
 ## 2. One way in: the edge
 
@@ -121,6 +125,11 @@ Measured on 2026-11-18 (WSL2 on a 12-core desktop): a fresh start, the smoke tes
 | cloudflared (`tunnel` profile, not run locally) | 128 MiB | – | – |
 | **Total** | **5.3 GiB** | **3.0 GiB** (sum of peaks) | |
 
+Re-measured on 2026-11-20 with the derived Postgres and MongoDB images (a fresh start, the smoke test, the API checks
+and the security checks, 30 samples): mongodb 250 MiB, the Postgres databases 35–46 MiB, Keycloak 603 MiB (79%),
+everything else at or below the table; 3.0 GiB in all. The derived images run the same binaries, so this is the expected result. CI's
+end-to-end job writes the usage after its checks to the run summary.
+
 Check on the host with `docker stats --no-stream`: a container that stays above about 90% of its limit needs more.
 
 ## 5. The images
@@ -130,6 +139,8 @@ Check on the host with `docker stats --no-stream`: a container that stays above 
 | the 7 Spring services | `alpine:3.24` with a `jlink` Java 25 runtime | only the JDK modules the service uses (from `jdeps`), the layered app, and an **AOT cache** (`app.aot`) made by a training run at build time. Non-root (uid 10001); `apk` removed; busybox stays for the `wget` health check |
 | frontend / edge | `nginxinc/nginx-unprivileged` (Alpine) | the built app with pre-compressed assets; nginx as uid 101 on port 8080; `apk` removed |
 | Keycloak | `quay.io/keycloak/keycloak` | the Assay realm, theme and the account console off (unchanged; Red Hat UBI 9 micro) |
+| fyp-grading-postgres | `postgres:16.16-alpine3.24` | the official image without `gosu`/`su-exec`; runs as `postgres` (uid 70) |
+| fyp-grading-mongo | `mongo:7.0.48` | the official image without `gosu`, `/opt/js-yaml` and the database tools (`mongodump`, `bsondump`, ...); runs as `mongodb` (uid 999). `mongosh` stays for the first-start user creation and the health check |
 
 - **Why jlink on Alpine.** Compared on admin-service: Temurin JRE on Ubuntu 475 MB, Temurin JRE on Alpine 352 MB,
   jlink on Alpine 215 MB, jlink on distroless 236 MB, Chainguard JRE 385 MB. All five had the same findings (they were
@@ -165,12 +176,20 @@ Before and after, measured the same way as the memory table (start-up = Spring's
 The service findings were all in Java libraries Spring Boot 4.0.9 manages (`httpcore5`/`httpclient5`, RabbitMQ's
 `amqp-client`, Eureka's `guava`). Each service's `pom.xml` pins the fixed versions until Spring Boot ships them.
 
-Third-party images, scanned the same day (not gated in CI, since they aren't built here):
+Third-party images (Trivy 0.76.2, database of 2026-11-20). The derived database images are gated in CI like the
+Keycloak image; the others are scanned by hand:
 
-| Image | HIGH + CRITICAL | Where | Exposure here |
+| Image | HIGH + CRITICAL | Where | Notes |
 | --- | ---: | --- | --- |
-| postgres 16.16-alpine | 26 (1 critical) | all in `gosu`, built with an old Go | `gosu` never runs: the container starts as `postgres` with no capabilities |
-| mongo 7.0.48 | 30 (1 critical) | `gosu`, plus `mongosh`'s `js-yaml` and `bsondump`'s `x/net` | `gosu` never runs; `mongosh` only runs the health check's fixed `ping`; `bsondump` isn't used |
+| postgres 16.16-alpine3.24 (official) | 27 | all in `gosu`, built with an old Go | the same in 18.7: every tag ships the same `gosu` |
+| **fyp-grading-postgres 16.16-alpine3.24** | **0** | | used in production |
+| mongo 7.0.48 (official) | 46 | `gosu` 27, the database tools 16 (Go runtime, `x/net`), the entrypoint's `/opt/js-yaml` 3 | the same in 8.0.38 and 9.0.8 |
+| **fyp-grading-mongo 7.0.48** | **0** | | used in production |
 | rabbitmq 4.2.9-alpine | 0 | | |
 | redis 8.4.8-alpine | 0 | | |
-| cloudflared 2026.11.1 | 1 (`x/net`) | the binary itself | fixed by the next cloudflared release (Dependabot) |
+| cloudflared 2026.11.1 | 1 (`x/net`) | the binary itself | the latest release; fixed by the next one (Dependabot). Only in the `tunnel` profile |
+
+Options weighed for the databases: newer upstream tags (no change: the findings are in `gosu` and the tools, not the
+database), Bitnami (its free images stopped updating in 2025) and Chainguard (free only as `latest`, so the major
+version can change under the data volume). A derived image is one `RUN rm` on top of the official image: Dependabot
+bumps its `FROM`, and CI rebuilds, scans and signs it.
