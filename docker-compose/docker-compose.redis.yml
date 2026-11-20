@@ -3,7 +3,7 @@ name: ${PROJECT_NAME}
 # TODO: ADD VOLUMES
 services:
   redis:
-    image: redis:latest
+    image: redis:8.4.8-alpine@sha256:ff72f74e4f471df79ed920aa8bbc35efe72ff8a1f8acdc50aad5dbb9b14a4034   # as in production
     container_name: redis
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}

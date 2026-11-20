@@ -2,7 +2,7 @@ name: ${PROJECT_NAME}
 
 services:
   rabbitmq:
-    image: rabbitmq:4.0-rc-management
+    image: rabbitmq:4.2.9-management-alpine   # the production version, plus the management UI
     container_name: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: admin
