@@ -9,11 +9,41 @@ Runs **Assay**, the final-year-project grading platform, on one machine:
 
 How the pieces fit together, and how a grade flows through them: [docs/architecture.md](docs/architecture.md).
 
+## Try it in one command
+
+You need Docker with Compose v2, about 6 GB of memory for Docker, and an internet connection. Only this repository
+is needed:
+
+```bash
+git clone https://github.com/FirasKhalife/fyp-grading-docker-compose.git
+cd fyp-grading-docker-compose
+./run-demo.sh
+```
+
+Then open http://localhost:8080 and pick a role. The first run downloads about 3 GB of images, then starts 16
+containers and waits until every one is healthy (a few minutes). It also creates `docker-compose/prod/.env` with
+random local passwords (git-ignored). On Windows, run it from WSL or Git Bash.
+
+| Command | What it does |
+|---|---|
+| `./run-demo.sh` | Start the demo, or bring it back up |
+| `./run-demo.sh status` | List the containers and their health |
+| `./run-demo.sh logs` | Follow the logs |
+| `./run-demo.sh update` | Download newer images and restart with them |
+| `./run-demo.sh stop` | Stop it and keep the data |
+| `./run-demo.sh reset` | Stop it and delete all its data |
+
+`EDGE_PORT=9000 ./run-demo.sh` uses another port on the first run, and `ASSAY_TAG=<short sha>` pins a release. It
+runs the same hardened production compose as the live demo (`docker-compose/prod/`), from the images CI publishes
+to `ghcr.io/firaskhalife/`.
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `docker-compose.sh` | Runs `docker compose` with every `docker-compose/docker-compose.*.yml` file |
+| `run-demo.sh` | Runs the demo from the published images ([above](#try-it-in-one-command)) |
+| `docker-compose.sh` | Development: runs `docker compose` with every `docker-compose/docker-compose.*.yml` file, building from the sibling repositories |
+| `scripts/clone-sources.sh` | Clones the sibling repositories the development stack builds from |
 | `docker-compose/.env` | Non-secret settings (service names, URLs). Passwords here are local defaults only; real ones come from the environment |
 | `docker-compose/config/keycloak/` | The Keycloak image, and `import/assay-realm.json`: realm `assay`, roles `ADMIN` / `REVIEWER` / `STUDENT`, the eight demo personas, and the public `assay-spa` client |
 | `docker-compose/config/keycloak/themes/assay/` | The Assay login theme: Keycloak's sign-in, error and sign-out pages in the app's look, light and dark, with self-hosted IBM Plex fonts ([below](#the-login-theme)) |
@@ -22,12 +52,13 @@ How the pieces fit together, and how a grade flows through them: [docs/architect
 | `docker-compose/prod/` | Production: a standalone compose for one 8 GB host that pulls the published images, with memory limits, health checks, one edge (`edge.nginx.conf`) and secrets from a git-ignored `.env` ([docs/deploy-hardening.md](docs/deploy-hardening.md)) |
 | `docs/` | Architecture, and running it in production |
 
-The service repositories are expected next to this one (`../fyp-grading-admin-service`, and so on). The production
-compose needs none of them: it runs the images CI publishes to `ghcr.io/firaskhalife/`.
+## Develop: build from source
 
-## Run
+The development stack builds every service from the repositories next to this one (`../fyp-grading-admin-service`,
+and so on). `scripts/clone-sources.sh` clones the missing ones. `run-demo.sh` needs none of them.
 
 ```bash
+scripts/clone-sources.sh
 ./docker-compose.sh up -d --build
 ```
 
@@ -36,8 +67,8 @@ compose needs none of them: it runs the images CI publishes to `ghcr.io/firaskha
 | http://localhost:9191 | The API gateway (`/api/**`, `/swagger-ui.html`) |
 | http://localhost:7080 | Keycloak (realm `assay`) |
 
-For production, see [docs/deploy-hardening.md](docs/deploy-hardening.md): `cd docker-compose/prod`, copy
-`.env.example` to `.env` and fill it in, then `docker compose up -d --wait`. Everything is then on one origin,
+For production on a server, see [docs/deploy-hardening.md](docs/deploy-hardening.md): `cd docker-compose/prod`,
+copy `.env.example` to `.env` and fill it in, then `docker compose up -d --wait`. Everything is then on one origin,
 `http://localhost:8080` on the host.
 
 The config server serves the local `../fyp-grading-config` checkout (`native` profile). Set

@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: ShellCheck the scripts
-        run: shellcheck --severity=warning docker-compose.sh e2e/*.sh scripts/*.sh
+        run: shellcheck --severity=warning docker-compose.sh run-demo.sh e2e/*.sh scripts/*.sh
 
       # The service repos aren't checked out here, so build paths are not resolved.
       - name: Compose files are valid
