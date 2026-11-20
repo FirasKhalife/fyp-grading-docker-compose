@@ -128,7 +128,7 @@ services:
 
   rabbitmq:
     <<: *base
-    image: rabbitmq:4.2.9-alpine@sha256:cd4f5c5bb4ffe530dba84770a8d139b8518470cdd385fec9cf014ebfff6bb009   # no management UI
+    image: rabbitmq:4.4.0-alpine@sha256:7b77c3d3a996c7fcca1ca8bf53ce1557ff43c13b8ca2c132df6031781b209ef2   # no management UI
     user: '100:101'   # rabbitmq
     hostname: rabbitmq   # the data directory is named after the node, so it must not change between runs
     environment:
@@ -147,7 +147,7 @@ services:
 
   redis:
     <<: *base
-    image: redis:8.4.8-alpine@sha256:ff72f74e4f471df79ed920aa8bbc35efe72ff8a1f8acdc50aad5dbb9b14a4034
+    image: redis:8.10.3-alpine@sha256:7958cfbb9d152f87dadfbc89f1b0b15938f0b81ff8982feb327476f4911935c3
     user: '999:1000'   # redis
     # Only the gateway's rate-limit buckets: nothing worth persisting.
     command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --save "" --appendonly no --maxmemory 48mb --maxmemory-policy allkeys-lru']
