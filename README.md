@@ -111,7 +111,7 @@ and every required action is off in the realm. So nobody can change a persona's 
 | Student, Team Beta (waiting on results) | `ahmad.fares` | STUDENT |
 | Other faculty | `john.doe`, `michael.johnson`, `emily.clark`, `lea.mansour` | REVIEWER |
 
-The web app signs a persona in with one click: it uses the password grant on `assay-spa`. "Sign in with email" uses
+The web app signs a persona in with one click: it uses the password grant on `assay-spa`. "Sign in with username" uses
 the authorization code flow with PKCE.
 
 A realm import never updates an existing realm. On a Keycloak imported before a persona was added, run
@@ -119,7 +119,7 @@ A realm import never updates an existing realm. On a Keycloak imported before a 
 
 ## The login theme
 
-"Sign in with email" and the sign-out confirmation show Keycloak's own pages. The `assay` theme makes them look like
+"Sign in with username" and the sign-out confirmation show Keycloak's own pages. The `assay` theme makes them look like
 the app: the "Private demo" strip, the wordmark, one card, the Assay colours in light and dark (from the visitor's
 system setting), 44 px targets and a 375 px layout.
 
