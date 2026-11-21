@@ -35,13 +35,17 @@ USERS = {"rania": "rania.haddad", "jane": "jane.smith", "karim": "karim.nassar",
 
 # ---------------------------------------------------------------- client
 _tokens = {}
+# A named User-Agent on every request: Cloudflare refuses Python-urllib's default one (error 1010) in front of the
+# live demo.
+UA = {"User-Agent": "assay-api-checks"}
 
 
 def token(who):
     if who not in _tokens:
         body = urllib.parse.urlencode({"grant_type": "password", "client_id": "assay-spa", "username": USERS[who],
                                        "password": PASSWORD}).encode()
-        with urllib.request.urlopen(KC + "/realms/assay/protocol/openid-connect/token", body, timeout=30) as r:
+        req = urllib.request.Request(KC + "/realms/assay/protocol/openid-connect/token", data=body, headers=UA)
+        with urllib.request.urlopen(req, timeout=30) as r:
             _tokens[who] = json.load(r)["access_token"]
     return _tokens[who]
 
@@ -59,7 +63,7 @@ class Res:
 
 
 def call(session, who, method, path, body=None, accept="application/json"):
-    h = {"Accept": accept}
+    h = {"Accept": accept, **UA}
     if who:
         h["Authorization"] = "Bearer " + token(who)
     if session:
@@ -69,10 +73,11 @@ def call(session, who, method, path, body=None, accept="application/json"):
     req = urllib.request.Request(GW + path, data=None if body is None else json.dumps(body).encode(), method=method,
                                  headers=h)
     try:
+        # r.headers is case-insensitive: Cloudflare sends some headers in lowercase (content-disposition).
         with urllib.request.urlopen(req, timeout=30) as r:
-            raw, st, hd = r.read(), r.status, dict(r.headers)
+            raw, st, hd = r.read(), r.status, r.headers
     except urllib.error.HTTPError as e:
-        raw, st, hd = e.read(), e.code, dict(e.headers)
+        raw, st, hd = e.read(), e.code, e.headers
     try:
         b = json.loads(raw) if raw else None
     except ValueError:

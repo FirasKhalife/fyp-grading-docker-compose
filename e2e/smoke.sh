@@ -130,7 +130,9 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "$GW/api/overview" -H "Authorizat
 [ "$code" = 404 ] && ok "the old copy id is gone (404)" || fail "old session after reset: $code"
 
 # Review H3: too many requests from one address get 429 with Retry-After (the bucket refills in a few seconds).
-seq 1 90 | xargs -P 30 -I{} curl -s -o /dev/null -D - "$GW/api/demo/personas" > $TMP/burst
+# One curl sending 150 requests in parallel (-Z), not 150 processes: it outruns the refill even over the internet
+# (the burst of 60 plus 20 a second), and one failed transfer doesn't end the script.
+curl -s -Z --parallel-max 60 -o /dev/null -D "$TMP/burst" "$GW/api/demo/personas?n=[1-150]" || true
 grep -q '^HTTP/[0-9.]* 429' $TMP/burst && grep -qi '^retry-after: [0-9]' $TMP/burst   && ok "rate limit: 429 with Retry-After" || fail "no 429 in a burst of 90 requests"
 
 # Review C1: a visitor must not be able to trigger an application-initiated action (here: change the shared
