@@ -96,8 +96,10 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "$KC/realms/assay/protocol/openid
 bf="$(kc get realms/assay --fields bruteForceProtected --format csv --noquotes)"
 [ "$bf" = false ] && ok "realm brute-force lockout is off" || bad "bruteForceProtected=$bf"
 uid="$(kc get users -r assay -q username=karim.nassar -q exact=true --fields id --format csv --noquotes)"
-kc get "attack-detection/brute-force/users/$uid" -r assay | grep -q '"disabled" : false' \
-  && ok "Karim isn't temporarily disabled" || bad "Karim is flagged by brute-force detection"
+# On failure, print what Keycloak answered: the first nightly run failed here once with no clue why.
+attack="$(kc get "attack-detection/brute-force/users/$uid" -r assay 2>&1)"
+grep -Eq '"disabled" *: *false' <<<"$attack" && ok "Karim isn't temporarily disabled" \
+  || bad "Karim is flagged by brute-force detection (user id '$uid'): $(tr -s ' \n' ' ' <<<"$attack" | cut -c1-300)"
 
 echo "== datastores, consoles and the app aren't reachable from outside the host"
 ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
