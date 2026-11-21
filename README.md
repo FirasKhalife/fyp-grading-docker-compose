@@ -12,8 +12,21 @@ the live demo at https://assay.firaskhalife.dev is hosted, delivered and run: [d
 
 ## Try it in one command
 
-You need Docker with Compose v2, about 6 GB of memory for Docker, and an internet connection. Only this repository
-is needed:
+What you need:
+
+| Need | Why |
+|---|---|
+| Docker with Compose v2 (Docker Desktop on Windows and macOS, Docker Engine on Linux) | Runs the 16 containers. The script checks it first and says what's missing |
+| About 6 GB of memory for Docker, about 7 GB of disk | The stack peaks around 3–4 GB. The images are a 3 GB download, about 6 GB unpacked. Docker Desktop: Settings > Resources |
+| Git | Only to clone this repository (GitHub's ZIP download works too) |
+| A bash shell | macOS and Linux have one. On Windows, run it from WSL or Git Bash |
+| An internet connection | For the first download, and the config server reads its settings from GitHub when it starts |
+| Port 8080 free | Or another one: `EDGE_PORT=9000 ./run-demo.sh` |
+
+No Node, Java or Maven: everything runs in the published images. They are built for amd64 (Intel and AMD). On an
+Apple Silicon Mac, Docker Desktop runs them through emulation, which is untested and slower to start.
+
+Only this repository is needed:
 
 ```bash
 git clone https://github.com/FirasKhalife/fyp-grading-docker-compose.git
@@ -23,7 +36,7 @@ cd fyp-grading-docker-compose
 
 Then open http://localhost:8080 and pick a role. The first run downloads about 3 GB of images, then starts 16
 containers and waits until every one is healthy (a few minutes). It also creates `docker-compose/prod/.env` with
-random local passwords (git-ignored). On Windows, run it from WSL or Git Bash.
+random local passwords (git-ignored).
 
 | Command | What it does |
 |---|---|
