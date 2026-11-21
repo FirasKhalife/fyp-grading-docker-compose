@@ -1,5 +1,5 @@
 <#--
-  The username + password page ("Sign in with email" in the app). Same fields and form posts as
+  The username + password page ("Sign in with username" in the app). Same fields and form posts as
   base/login/login.ftl (Keycloak 26.8), with the Assay copy, natural tab order and the demo username and password hints.
   Registration, password reset and remember-me are off in the realm, so their links are not rendered.
 -->
