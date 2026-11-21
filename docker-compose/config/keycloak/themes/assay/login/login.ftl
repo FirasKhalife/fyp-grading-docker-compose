@@ -1,6 +1,6 @@
 <#--
   The username + password page ("Sign in with email" in the app). Same fields and form posts as
-  base/login/login.ftl (Keycloak 26.8), with the Assay copy, natural tab order and the demo-password hint.
+  base/login/login.ftl (Keycloak 26.8), with the Assay copy, natural tab order and the demo username and password hints.
   Registration, password reset and remember-me are off in the realm, so their links are not rendered.
 -->
 <#import "template.ftl" as layout>
@@ -26,8 +26,10 @@
                         <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')}" type="text"
                                autofocus autocapitalize="none" spellcheck="false"
                                autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}"
-                               <#if hasError>aria-invalid="true" aria-describedby="input-error"</#if>
+                               aria-describedby="username-hint<#if hasError> input-error</#if>"
+                               <#if hasError>aria-invalid="true"</#if>
                                dir="ltr"/>
+                        <p class="as-help" id="username-hint">${kcSanitize(msg("assayUsernameHint"))?no_esc}</p>
                     </div>
                 </#if>
 
