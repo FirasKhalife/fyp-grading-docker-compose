@@ -1,6 +1,19 @@
 # Decisions log
 
-## 2026-11-15: Hosting (decided, **not ordered yet**)
+## 2026-11-21: Live
+
+The demo went live at **https://assay.firaskhalife.dev** on 21 Nov 2026. How it is hosted, delivered and run, and
+why, is in [../operations/](../operations/README.md); [decisions.md](../operations/decisions.md) there supersedes the
+hosting entry below where they differ. What changed from the plan:
+
+- **Ordered 20 Nov 2026 on a 1-month term** instead of 24 months, to prove the setup first; a longer, cheaper term
+  can follow.
+- **The domain was not on Cloudflare** (its DNS was at Vercel). The zone moved to Cloudflare's free plan; the
+  portfolio stays hosted on Vercel, with its records DNS-only rather than proxied.
+- **The open questions below are settled:** the Netcup host is set up with Ansible after a manual OS install (Netcup
+  has no provisioning API), and CI/CD is GitHub Actions, with the server pulling new images itself.
+
+## 2026-11-15: Hosting (decided before ordering)
 
 The server will be ordered only once the application work is done, so no money is spent while it's being built. Measurements and price comparison are in [PHASE1-REPORT.md](PHASE1-REPORT.md).
 

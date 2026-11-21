@@ -7,7 +7,8 @@ Runs **Assay**, the final-year-project grading platform, on one machine:
 - Postgres, MongoDB, RabbitMQ and Redis
 - optional Prometheus, Grafana and Loki
 
-How the pieces fit together, and how a grade flows through them: [docs/architecture.md](docs/architecture.md).
+How the pieces fit together, and how a grade flows through them: [docs/architecture.md](docs/architecture.md). How
+the live demo at https://assay.firaskhalife.dev is hosted, delivered and run: [docs/operations/](docs/operations/README.md).
 
 ## Try it in one command
 
@@ -54,6 +55,7 @@ to `ghcr.io/firaskhalife/`.
 | `docker-compose/prod/` | Production: a standalone compose for one 8 GB host that pulls the published images, with memory limits, health checks, one edge (`edge.nginx.conf`) and secrets from a git-ignored `.env` ([docs/deploy-hardening.md](docs/deploy-hardening.md)) |
 | `contract/openapi.yaml` | The OpenAPI contract shared by the frontend and the services |
 | `docs/` | Architecture, and running it in production |
+| `docs/operations/` | How the live demo is hosted, delivered and run, and why: [summary and glossary](docs/operations/README.md), hosting, CI/CD, the runbook, the decisions |
 | `docs/project/` | The product brief, decisions, the hosting study, the Phase 2 plan and the design canvas ([index](docs/project/README.md)) |
 
 ## Develop: build from source

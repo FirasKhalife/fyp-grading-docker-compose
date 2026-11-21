@@ -2,7 +2,8 @@
 
 This repository runs Assay, live at https://assay.firaskhalife.dev. The deployment itself (one VPS behind a
 Cloudflare Tunnel, Ansible and OpenTofu) is in [`fyp-grading-iac/live/`](https://github.com/FirasKhalife/fyp-grading-iac/tree/master/live);
-its README is the full guide. A local session on the owner's machine also gets a private runbook with the machine
+its README is the full guide, and [docs/operations/](docs/operations/README.md) here explains it all (hosting,
+CI/CD, the runbook, the decisions). A local session on the owner's machine also gets a private runbook with the machine
 details; this file is the part that is safe to publish.
 
 ## How a change reaches production
