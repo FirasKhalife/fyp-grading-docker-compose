@@ -111,7 +111,7 @@ services:
   mongodb:
     <<: *base
     # mongo:7.0.48 without gosu, js-yaml and the database tools (config/mongo)
-    image: ghcr.io/firaskhalife/fyp-grading-mongo:7.0.48@sha256:4f410c943a76063bb852d72f508ed093f315ecf58e16939d9ea602b0cd7f9140
+    image: ghcr.io/firaskhalife/fyp-grading-mongo:7.0.48@sha256:7903e3967a4d13e1a8bb1d76b76b28524a2490001b7e370ad26d7e8302e9b631
     user: '999:999'   # mongodb
     # WiredTiger would otherwise size its cache from the host's RAM, not the container's limit.
     command: [mongod, --wiredTigerCacheSizeGB, '0.25']
