@@ -68,7 +68,7 @@ x-spring-env: &spring-env
 x-postgres: &postgres
   <<: *base
   # postgres:16.16-alpine3.24 without gosu (config/postgres)
-  image: ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24@sha256:b7cd7b44d0c28435a33524aa9b460e2fef66a6c5563b0efc7aef8102787948c8
+  image: ghcr.io/firaskhalife/fyp-grading-postgres:16.16-alpine3.24@sha256:ad7f0cffd15955c9c1543205800afc26153c7520340b2a328a3b18ab080f8c9a
   user: '70:70'   # postgres; a new volume takes its owner from the image, so no chown (and no root) is needed
   tmpfs: ['/tmp:size=16m', '/var/run/postgresql:size=1m']
   # Small buffers: each database holds a few MB of demo data per visitor copy.
